@@ -2,7 +2,9 @@
 
 Welcome to hpdg (**H**igh-**P**erformance **D**ata **G**enerator)!
 
-This problem is currently under heavy development. Any PR / Issue is welcome.
+**hpdg** is a high-performance data generator for competitive programming use, which put performance at the first place. As it is written in Rust, it should be faster than Luogu's CYaRon data generator. It will also make the program almost impossible to misuse different varibles for Rust's strong and safe typing system.
+
+This problem is currently under heavy development and isn't ready for production use. Any PR / Issue is welcome.
 
 This is a data generator for competitive programming (Olympaid in Informatics) problems.
 

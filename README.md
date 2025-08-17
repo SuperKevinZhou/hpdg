@@ -16,3 +16,4 @@ Compared to Luogu's CYaRon, this project aims to be a faster data generator writ
   - Testcase output generation from std program
 - Multi-thread data generating for multi-testcase problems.
 - Graph (and tree) generating with various parameters.
+- Python port.

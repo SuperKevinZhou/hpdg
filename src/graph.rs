@@ -384,3 +384,31 @@ impl SwitchGraph {
             .flat_map(|(&(u, v), &count)| std::iter::repeat((u, v)).take(count))
     }
 }
+
+pub struct Graph {
+    directed: bool,
+    edges: HashMap<usize, Vec<Edge>>,
+}
+
+impl Graph {
+    pub fn new(point_count: usize, directed: bool) -> Graph {
+        let mut graph = Graph {
+            directed,
+            edges: HashMap::new(),
+        };
+
+        for point in 1..=point_count {
+            graph.edges.insert(point, Vec::new());
+        }
+
+        graph
+    }
+}
+
+impl Graph {
+    pub fn iter_edge(&self) -> impl Iterator {
+        self.edges.values()
+            .flat_map(|v| v.into_iter())
+            .filter(|e| { e.v >= e.u || self.directed })
+    }
+}

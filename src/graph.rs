@@ -1,33 +1,42 @@
-use std::collections::{hash_map::Entry, HashMap};
-use rand::{distr::{weighted::WeightedIndex, Distribution}, rng};
+use std::{collections::{hash_map::Entry, HashMap}, fmt};
+use rand::{distr::{weighted::WeightedIndex, Distribution}, rng, seq::SliceRandom, Rng};
 
 pub struct Edge {
     u: usize,
     v: usize,
     w: i64,
+    weighted: bool,
 }
 
 impl Edge {
-    pub fn new(u: usize, v: usize, w: i64) -> Edge {
-        Edge { u, v, w }
+    pub fn new(u: usize, v: usize, w: Option<i64>) -> Edge {
+        if let Some(w) = w {
+            Edge { u, v, w, weighted: true }
+        } else {
+            Edge { u, v, w: 0, weighted: false }
+        }
     }
 }
 
-impl Edge {
-    pub fn unweighted_edge(&self) -> String {
-        format!("{} {}", self.u, self.v)
+// impl Edge {
+//     pub fn unweighted_edge(&self) -> String {
+//         format!("{} {}", self.u, self.v)
+//     }
+// }
+
+impl fmt::Display for Edge {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.weighted {
+            write!(f, "{} {} {}", self.u, self.v, self.w)
+        } else {
+            write!(f, "{} {}", self.u, self.v)
+        }
     }
 }
 
-impl ToString for Edge {
-    fn to_string(&self) -> String {
-        format!("{} {} {}", self.u, self.v, self.w)
-    }
-}
-
-impl Into<(usize, usize)> for Edge {
-    fn into(self) -> (usize, usize) {
-        (self.u, self.v)
+impl From<Edge> for (usize, usize) {
+    fn from(val: Edge) -> Self {
+        (val.u, val.v)
     }
 }
 
@@ -43,7 +52,7 @@ impl ToEdge for Edge {
 
 impl ToEdge for (usize, usize) {
     fn to_edge(self) -> Edge {
-        Edge { u: self.0, v: self.1, w: 0 }
+        Edge { u: self.0, v: self.1, w: 0, weighted: false }
     }
 }
 
@@ -52,7 +61,8 @@ impl ToEdge for (u64, u64) {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
-            w: 0
+            w: 0,
+            weighted: false
         }
     }
 }
@@ -62,7 +72,8 @@ impl ToEdge for (u32, u32) {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
-            w: 0
+            w: 0,
+            weighted: false
         }
     }
 }
@@ -72,7 +83,8 @@ impl ToEdge for (isize, isize) {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
-            w: 0
+            w: 0,
+            weighted: false
         }
     }
 }
@@ -82,7 +94,8 @@ impl ToEdge for (i64, i64) {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
-            w: 0
+            w: 0,
+            weighted: false
         }
     }
 }
@@ -92,7 +105,8 @@ impl ToEdge for (i32, i32) {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
-            w: 0
+            w: 0,
+            weighted: false
         }
     }
 }
@@ -169,13 +183,13 @@ impl SwitchGraph {
         
         let first_index = WeightedIndex::new(&weights)
             .ok()
-            .and_then(|dist| Some(dist.sample(&mut rng)))
+            .map(|dist| dist.sample(&mut rng))
             .unwrap_or(0);
         let &(mut e1, _) = &normalized_edges[first_index];
         
         let second_index = WeightedIndex::new(&weights)
             .ok()
-            .and_then(|dist| Some(dist.sample(&mut rng)))
+            .map(|dist| dist.sample(&mut rng))
             .unwrap_or(0);
         let &(mut e2, _) = &normalized_edges[second_index];
 
@@ -199,10 +213,9 @@ impl SwitchGraph {
             }
         }
 
-        if !repeated_edges {
-            if self.edges.contains_key(&(x1, y2)) || self.edges.contains_key(&(x2, y1)) {
+        if !repeated_edges
+            && (self.edges.contains_key(&(x1, y2))) || self.edges.contains_key(&(x2, y1)) {
                 return false;
-            }
         }
 
         self.remove(x1, y1);
@@ -381,7 +394,7 @@ impl SwitchGraph {
     pub fn iter_edges(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         self.edges
             .iter()
-            .flat_map(|(&(u, v), &count)| std::iter::repeat((u, v)).take(count))
+            .flat_map(|(&(u, v), &count)| std::iter::repeat_n((u, v), count))
     }
 }
 
@@ -406,9 +419,91 @@ impl Graph {
 }
 
 impl Graph {
-    pub fn iter_edge(&self) -> impl Iterator {
+    pub fn iter_edges(&self) -> impl Iterator<Item = &Edge> {
         self.edges.values()
-            .flat_map(|v| v.into_iter())
+            .flat_map(|v| v.iter())
             .filter(|e| { e.v >= e.u || self.directed })
+    }
+
+    pub fn iter_edges_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
+        self.edges.values_mut()
+            .flat_map(|v| v.iter_mut())
+            .filter(|e| { e.v >= e.u || self.directed })
+    }
+
+    pub fn edge_count(&self) -> usize {
+        self.iter_edges().count()
+    }
+    
+    pub fn add_single_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        self.edges
+            .entry(u)
+            .and_modify(|g| { g.push(Edge::new(u, v, w)) })
+            .or_insert(vec![Edge::new(u, v, w)]);
+    }
+
+    pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        // let w = w.unwrap_or(1);
+        // self.add_single_edge(u, v, w);
+
+        // if (!self.directed) && u != v {
+        //     self.add_single_edge(v, u, w);
+        // }
+        if let Some(w) = w {
+            self.add_single_edge(u, v, Some(w));
+            if !self.directed && u != v {
+                self.add_single_edge(v, u, Some(w));
+            }
+        } else {
+            self.add_single_edge(u, v, None);
+            if !self.directed && u != v {
+                self.add_single_edge(v, u, None);
+            }
+        }
+    }
+
+    pub fn to_string(&self, shuffle: bool, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
+        let mut rng = rng();
+        let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.to_string()) });
+        let mut buf: Vec<String> = Vec::new();
+        buf.reserve(self.edge_count() * 8);
+
+        if shuffle {
+            let mut new_node_id: Vec<usize> = (1..=self.edges.keys().count()).collect();
+            new_node_id.shuffle(&mut rng);
+            let mut edge_buf: Vec<Edge> = Vec::new();
+            for edge in self.iter_edges() {
+                edge_buf.push(Edge::new(new_node_id[edge.u - 1], new_node_id[edge.v - 1], if edge.weighted { Some(edge.w) } else { None }));
+            }
+            edge_buf.shuffle(&mut rng);
+            // for edge in edge_buf {
+            //     if !self.directed && rng.random_bool(0.5) {
+
+            //     }
+            // }
+            edge_buf.iter_mut()
+                .for_each(|e| {
+                    if !self.directed && rng.random_bool(0.5) {
+                        let tmpu = e.u;
+                        let tmpv = e.v;
+                        e.u = tmpv;
+                        e.v = tmpu;
+                    }
+                });
+            for edge in self.iter_edges() {
+                buf.push(edge_display_function(edge));
+            }
+        } else {
+            for edge in self.iter_edges() {
+                buf.push(edge_display_function(edge));
+            }
+        }
+        buf.join("\n")
+    }
+}
+
+impl fmt::Display for Graph {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string(false, None))
     }
 }

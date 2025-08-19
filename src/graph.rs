@@ -1,5 +1,5 @@
 use std::{collections::{hash_map::Entry, HashMap}, fmt};
-use rand::{distr::{weighted::WeightedIndex, Distribution}, rng, seq::SliceRandom, Rng};
+use rand::{distr::{weighted::WeightedIndex, Distribution}, rng, rngs::ThreadRng, seq::SliceRandom, Rng};
 
 pub struct Edge {
     u: usize,
@@ -40,24 +40,14 @@ impl From<Edge> for (usize, usize) {
     }
 }
 
-trait ToEdge {
-    fn to_edge(self) -> Edge;
-}
-
-impl ToEdge for Edge {
-    fn to_edge(self) -> Edge {
-        self
-    }
-}
-
-impl ToEdge for (usize, usize) {
-    fn to_edge(self) -> Edge {
+impl Into<Edge> for (usize, usize) {
+    fn into(self) -> Edge {
         Edge { u: self.0, v: self.1, w: 0, weighted: false }
     }
 }
 
-impl ToEdge for (u64, u64) {
-    fn to_edge(self) -> Edge {
+impl Into<Edge> for (u64, u64) {
+    fn into(self) -> Edge {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
@@ -67,50 +57,50 @@ impl ToEdge for (u64, u64) {
     }
 }
 
-impl ToEdge for (u32, u32) {
-    fn to_edge(self) -> Edge {
+
+impl Into<Edge> for (u32, u32) {
+    fn into(self) -> Edge {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
             w: 0,
-            weighted: false
+            weighted: false,
         }
     }
 }
 
-impl ToEdge for (isize, isize) {
-    fn to_edge(self) -> Edge {
+impl Into<Edge> for (isize, isize) {
+    fn into(self) -> Edge {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
             w: 0,
-            weighted: false
+            weighted: false,
         }
     }
 }
 
-impl ToEdge for (i64, i64) {
-    fn to_edge(self) -> Edge {
+impl Into<Edge> for (i64, i64) {
+    fn into(self) -> Edge {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
             w: 0,
-            weighted: false
+            weighted: false,
         }
     }
 }
 
-impl ToEdge for (i32, i32) {
-    fn to_edge(self) -> Edge {
+impl Into<Edge> for (i32, i32) {
+    fn into(self) -> Edge {
         Edge {
             u: self.0 as usize,
             v: self.1 as usize,
             w: 0,
-            weighted: false
+            weighted: false,
         }
     }
 }
-
 
 pub struct SwitchGraph {
     directed: bool,
@@ -122,14 +112,14 @@ impl SwitchGraph {
     pub fn new<I, E>(edges: I, directed: bool) -> SwitchGraph
     where
         I: IntoIterator<Item = E>,
-        E: ToEdge
+        E: Into<Edge>
     {
         let mut graph = SwitchGraph {
             directed,
             edges: HashMap::new(),
         };
 
-        for (u, v) in edges.into_iter().map(|e: E| { e.to_edge().into() }) {
+        for (u, v) in edges.into_iter().map(|e: E| { Into::<Edge>::into(e).into() }) {
             graph.insert(u, v);
         }
 
@@ -462,11 +452,11 @@ impl Graph {
         }
     }
 
-    pub fn to_string(&self, shuffle: bool, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
+    pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
         let mut rng = rng();
         let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.to_string()) });
         let mut buf: Vec<String> = Vec::new();
-        buf.reserve(self.edge_count() * 8);
+        buf.reserve(self.edge_count() * line_reserve.unwrap_or(6));
 
         if shuffle {
             let mut new_node_id: Vec<usize> = (1..=self.edges.keys().count()).collect();
@@ -490,7 +480,7 @@ impl Graph {
                         e.v = tmpu;
                     }
                 });
-            for edge in self.iter_edges() {
+            for edge in &edge_buf {
                 buf.push(edge_display_function(edge));
             }
         } else {
@@ -504,6 +494,86 @@ impl Graph {
 
 impl fmt::Display for Graph {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string(false, None))
+        write!(f, "{}", self.to_string(false, None, None))
+    }
+}
+
+// impl Graph {
+//     fn tree(
+//         point_count: usize,
+//         chain: f64,
+//         flower: f64,
+//         weight_limit: (i64, i64),
+//         directed: bool,
+//         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+//         father_gen: Option<Box<dyn FnMut(&mut ThreadRng, usize) -> usize>>
+//     ) -> Graph {
+//         todo!()
+//     }
+// }
+
+impl Graph {
+    pub fn tree(
+        point_count: usize,
+        chain: f64,
+        flower: f64,
+        weight_limit: (i64, i64),
+        directed: bool,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+        father_gen: Option<Box<dyn FnMut(&mut ThreadRng, usize) -> usize>>,
+    ) -> Graph {
+        assert!(
+            (0.0..=1.0).contains(&chain) && (0.0..=1.0).contains(&flower),
+            "chain and flower must be between 0.0 and 1.0"
+        );
+        assert!(
+            chain + flower <= 1.0,
+            "chain plus flower must be less than or equal to 1.0"
+        );
+        
+        let mut rng = rng();
+        let (min_weight, max_weight) = weight_limit;
+        
+        let default_weight_gen = |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight);
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+        
+        let default_father_gen = |rng: &mut ThreadRng, cur| {
+            if cur <= 1 {
+                1
+            } else {
+                rng.random_range(1..cur)
+            }
+        };
+        let mut father_gen = father_gen.unwrap_or_else(|| Box::new(move |rng, cur| default_father_gen(rng, cur)));
+        
+        let total_edges = point_count.saturating_sub(1);
+        let chain_count = ((total_edges as f64) * chain).round() as usize;
+        let flower_count = ((total_edges as f64) * flower).round() as usize;
+        // let random_count = total_edges.saturating_sub(chain_count + flower_count);
+        
+        let mut graph = Graph::new(point_count, directed);
+        
+        let chain_end = chain_count + 1;
+        for i in 2..=chain_end {
+            let weight = weight_gen(&mut rng);
+            graph.add_edge(i - 1, i, Some(weight));
+        }
+        
+        let flower_start = chain_end + 1;
+        let flower_end = (flower_start + flower_count).min(point_count + 1);
+        for i in flower_start..flower_end {
+            let weight = weight_gen(&mut rng);
+            graph.add_edge(1, i, Some(weight));
+        }
+        
+        let random_start = flower_end;
+        for i in random_start..=point_count {
+            if i == 1 { continue; }
+            let father = father_gen(&mut rng, i);
+            let weight = weight_gen(&mut rng);
+            graph.add_edge(father, i, Some(weight));
+        }
+        
+        graph
     }
 }

@@ -576,4 +576,61 @@ impl Graph {
         
         graph
     }
+
+    pub fn binary_tree(
+        point_count: usize,
+        left: f64,
+        right: f64,
+        weight_limit: (i64, i64),
+        directed: bool,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(
+            (0.0..=1.0).contains(&left) && (0.0..=1.0).contains(&right),
+            "left and right must be between 0.0 and 1.0"
+        );
+        assert!(
+            left + right <= 1.0,
+            "left plus right must be less than or equal to 1.0"
+        );
+        
+        let mut rng = rng();
+        let (min_weight, max_weight) = weight_limit;
+        
+        let default_weight_gen = |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight);
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+        
+        let mut graph = Graph::new(point_count, directed);
+        
+        let mut can_left = vec![1];
+        let mut can_right = vec![1];
+        
+        for node_id in 2..=point_count {
+            let edge_pos: f64 = rng.random();
+            
+            let is_left = if edge_pos < left {
+                true
+            } else if edge_pos < left + right {
+                false
+            } else {
+                let mid = left + right + (1.0 - left - right) / 2.0;
+                edge_pos <= mid
+            };
+            
+            let parent = if is_left {
+                let idx = rng.random_range(0..can_left.len());
+                can_left.swap_remove(idx)
+            } else {
+                let idx = rng.random_range(0..can_right.len());
+                can_right.swap_remove(idx)
+            };
+            
+            let weight = weight_gen(&mut rng);
+            graph.add_edge(parent, node_id, Some(weight));
+            can_left.push(node_id);
+            can_right.push(node_id);
+        }
+        
+        graph
+    }
 }

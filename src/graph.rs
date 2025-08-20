@@ -586,6 +586,10 @@ impl Graph {
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
         assert!(
+            point_count > 0,
+            "point_count must be above zero"
+        );
+        assert!(
             (0.0..=1.0).contains(&left) && (0.0..=1.0).contains(&right),
             "left and right must be between 0.0 and 1.0"
         );

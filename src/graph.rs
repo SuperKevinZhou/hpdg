@@ -517,7 +517,7 @@ impl Graph {
         point_count: usize,
         chain: f64,
         flower: f64,
-        weight_limit: (i64, i64),
+        weight_limit: Option<(i64, i64)>,
         directed: bool,
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
         father_gen: Option<Box<dyn FnMut(&mut ThreadRng, usize) -> usize>>,
@@ -532,9 +532,12 @@ impl Graph {
         );
         
         let mut rng = rng();
-        let (min_weight, max_weight) = weight_limit;
+        let is_unweighted = weight_limit.is_none();
         
-        let default_weight_gen = |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight);
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.unwrap();
+            rng.random_range(min_weight..=max_weight)
+        };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
         
         let default_father_gen = |rng: &mut ThreadRng, cur| {
@@ -549,29 +552,28 @@ impl Graph {
         let total_edges = point_count.saturating_sub(1);
         let chain_count = ((total_edges as f64) * chain).round() as usize;
         let flower_count = ((total_edges as f64) * flower).round() as usize;
-        // let random_count = total_edges.saturating_sub(chain_count + flower_count);
         
         let mut graph = Graph::new(point_count, directed);
         
         let chain_end = chain_count + 1;
         for i in 2..=chain_end {
-            let weight = weight_gen(&mut rng);
-            graph.add_edge(i - 1, i, Some(weight));
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(i - 1, i, weight);
         }
         
         let flower_start = chain_end + 1;
         let flower_end = (flower_start + flower_count).min(point_count + 1);
         for i in flower_start..flower_end {
-            let weight = weight_gen(&mut rng);
-            graph.add_edge(1, i, Some(weight));
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(1, i, weight);
         }
         
         let random_start = flower_end;
         for i in random_start..=point_count {
             if i == 1 { continue; }
             let father = father_gen(&mut rng, i);
-            let weight = weight_gen(&mut rng);
-            graph.add_edge(father, i, Some(weight));
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(father, i, weight);
         }
         
         graph
@@ -581,7 +583,7 @@ impl Graph {
         point_count: usize,
         left: f64,
         right: f64,
-        weight_limit: (i64, i64),
+        weight_limit: Option<(i64, i64)>,
         directed: bool,
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
@@ -599,9 +601,12 @@ impl Graph {
         );
         
         let mut rng = rng();
-        let (min_weight, max_weight) = weight_limit;
+        let is_unweighted = weight_limit.is_none();
         
-        let default_weight_gen = |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight);
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.unwrap();
+            rng.random_range(min_weight..=max_weight)
+        };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
         
         let mut graph = Graph::new(point_count, directed);
@@ -629,8 +634,8 @@ impl Graph {
                 can_right.swap_remove(idx)
             };
             
-            let weight = weight_gen(&mut rng);
-            graph.add_edge(parent, node_id, Some(weight));
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(parent, node_id, weight);
             can_left.push(node_id);
             can_right.push(node_id);
         }

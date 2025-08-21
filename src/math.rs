@@ -82,6 +82,8 @@ pub fn is_pal_u64(n: u64) -> bool {
 }
 
 pub fn divisor_sum(n: u64) -> u64 {
+    if n == 0 { return 0; }
+
     let mut i: u64 = 0;
     let mut sum: u64 = 0;
 

@@ -32,3 +32,18 @@ pub fn is_perm(a: u64, b: u64) -> bool {
     
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_perm() {
+        assert_eq!(is_perm(1, 2), false);
+        assert_eq!(is_perm(23, 32), true);
+        assert_eq!(is_perm(12345, 54123), true);
+        assert_eq!(is_perm(1222, 2221), true);
+        assert_eq!(is_perm(222, 222), true);
+        assert_eq!(is_perm(222, 2222), false);
+    }
+}

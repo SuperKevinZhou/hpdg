@@ -90,8 +90,46 @@ pub fn divisor_sum(n: u64) -> u64 {
         if i * i == n { sum -= i; }
         i += 1;
     }
-    
+
     sum
+}
+
+pub fn is_pandigital(n: &str, s: usize) -> bool {
+    if s == 0 {
+        return n.is_empty();
+    }
+    
+    if n.len() != s {
+        return false;
+    }
+    
+    if s > 10 {
+        return false;
+    }
+    
+    let bytes = n.as_bytes();
+    let mut seen: u16 = 0;
+    
+    for &byte in bytes {
+        if !byte.is_ascii_digit() {
+            return false;
+        }
+        
+        let digit = (byte - b'0') as u16;
+        let bit = 1 << digit;
+        
+        if seen & bit != 0 {
+            return false;
+        }
+        
+        seen |= bit;
+    }
+    
+    if s == 10 {
+        seen == 0x3FF
+    } else {
+        seen == ((1 << s) - 1) << 1
+    }
 }
 
 #[cfg(test)]
@@ -141,5 +179,36 @@ mod tests {
         assert!(is_pal_string("a中a".to_string()));
         assert!(is_pal_string("ab中ba".to_string()));
         assert!(!is_pal_string("a中b".to_string()));
+    }
+
+    #[test]
+    fn test_s9_valid() {
+        assert!(is_pandigital("123456789", 9));
+    }
+
+    #[test]
+    fn test_s9_invalid() {
+        assert!(!is_pandigital("123456788", 9));
+        assert!(!is_pandigital("12345678", 9));
+        assert!(!is_pandigital("012345678", 9));
+    }
+
+    #[test]
+    fn test_s10_valid() {
+        assert!(is_pandigital("0123456789", 10));
+        assert!(is_pandigital("1023456789", 10));
+    }
+
+    #[test]
+    fn test_s10_invalid() {
+        assert!(!is_pandigital("1123456789", 10));
+        assert!(!is_pandigital("123456789", 10));
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        assert!(is_pandigital("", 0));
+        assert!(!is_pandigital("1", 0));
+        assert!(!is_pandigital("123", 11));
     }
 }

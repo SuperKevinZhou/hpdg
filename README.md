@@ -34,3 +34,9 @@ Compared to Luogu's CYaRon, this project aims to be a faster data generator writ
     - [ ] Generate connected graphs
     - [ ] Generate forests
   - [ ] *GraphMatrix*: a type of graph represented by adjacency matrix
+- [ ] **Math**
+  - [x] *is_perm*
+  - [x] *is_pal_string* & *is_pal_u64*
+  - [x] *divisor_sum*
+  - [x] *is_pandigital*, *is_pandigital_u64* & *is_pandigital_u64_default*
+  - [ ] Other useful functions...

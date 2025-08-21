@@ -81,6 +81,19 @@ pub fn is_pal_u64(n: u64) -> bool {
     x == reversed || x == reversed / 10
 }
 
+pub fn divisor_sum(n: u64) -> u64 {
+    let mut i: u64 = 0;
+    let mut sum: u64 = 0;
+
+    while i * i <= n {
+        if n % i == 0 { sum += i + n / i; }
+        if i * i == n { sum -= i; }
+        i += 1;
+    }
+    
+    sum
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

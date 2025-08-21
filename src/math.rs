@@ -84,7 +84,7 @@ pub fn is_pal_u64(n: u64) -> bool {
 pub fn divisor_sum(n: u64) -> u64 {
     if n == 0 { return 0; }
 
-    let mut i: u64 = 0;
+    let mut i: u64 = 1;
     let mut sum: u64 = 0;
 
     while i * i <= n {
@@ -330,5 +330,35 @@ mod tests {
         assert!(is_pandigital_u64(1, 1));
         assert!(!is_pandigital_u64(10, 2));
         assert!(!is_pandigital_u64(10, 2));
+    }
+
+    #[test]
+    fn test_divisor_sum_zero() {
+        assert_eq!(divisor_sum(0), 0);
+    }
+
+    #[test]
+    fn test_divisor_sum_one() {
+        assert_eq!(divisor_sum(1), 1);
+    }
+
+    #[test]
+    fn test_divisor_sum_prime() {
+        assert_eq!(divisor_sum(5), 6);
+    }
+
+    #[test]
+    fn test_divisor_sum_perfect_square() {
+        assert_eq!(divisor_sum(16), 31);
+    }
+
+    #[test]
+    fn test_divisor_sum_non_square() {
+        assert_eq!(divisor_sum(12), 28);
+    }
+
+    #[test]
+    fn test_divisor_sum_large_number() {
+        assert_eq!(divisor_sum(100), 217);
     }
 }

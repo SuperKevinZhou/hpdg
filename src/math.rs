@@ -132,6 +132,86 @@ pub fn is_pandigital(n: &str, s: usize) -> bool {
     }
 }
 
+#[inline]
+pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
+    if s == 0 || s > 10 {
+        return false;
+    }
+    
+    const POW10: [u64; 11] = [
+        1,          // 10^0
+        10,         // 10^1
+        100,        // 10^2
+        1000,       // 10^3
+        10000,      // 10^4
+        100000,     // 10^5
+        1000000,    // 10^6
+        10000000,   // 10^7
+        100000000,  // 10^8
+        1000000000, // 10^9
+        10000000000 // 10^10
+    ];
+    
+    if n < POW10[s - 1] || n >= POW10[s] {
+        return false;
+    }
+    
+    let mut num = n;
+    let mut seen = 0u16;
+    
+    for _ in 0..s {
+        let digit = (num % 10) as u8;
+        num /= 10;
+        
+        if digit > 9 {
+            return false;
+        }
+
+        if s < 10 && digit == 0 {
+            return false;
+        }
+        
+        let bit = 1 << digit;
+        if (seen & bit) != 0 {
+            return false;
+        }
+        seen |= bit;
+    }
+    
+    if s == 10 {
+        seen == 0x3FF
+    } else {
+        seen == (1 << (s + 1)) - 2
+    }
+}
+
+#[inline]
+pub fn is_pandigital_u64_default(n: u64) -> bool {
+    if n < 123456789 || n > 987654321 {
+        return false;
+    }
+    
+    let mut num = n;
+    let mut seen = 0u16;
+    
+    for _ in 0..9 {
+        let digit = (num % 10) as u8;
+        num /= 10;
+        
+        if digit == 0 {
+            return false;
+        }
+        
+        let bit = 1 << digit;
+        if (seen & bit) != 0 {
+            return false;
+        }
+        seen |= bit;
+    }
+    
+    seen == 0b1111111110
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -210,5 +290,43 @@ mod tests {
         assert!(is_pandigital("", 0));
         assert!(!is_pandigital("1", 0));
         assert!(!is_pandigital("123", 11));
+    }
+
+    #[test]
+    fn test_u64_s9_valid() {
+        assert!(is_pandigital_u64(123456789, 9));
+        assert!(is_pandigital_u64(918273645, 9));
+        assert!(is_pandigital_u64_default(123456789));
+    }
+
+    #[test]
+    fn test_u64_s9_invalid() {
+        assert!(!is_pandigital_u64(123456788, 9));
+        assert!(!is_pandigital_u64(12345678, 9));
+        assert!(!is_pandigital_u64(102345678, 9));
+        assert!(!is_pandigital_u64_default(0));
+    }
+
+    #[test]
+    fn test_u64_s10_valid() {
+        assert!(is_pandigital_u64(1023456789, 10));
+        assert!(is_pandigital_u64(9081726354, 10));
+    }
+
+    #[test]
+    fn test_u64_s10_invalid() {
+        assert!(!is_pandigital_u64(1123456789, 10));
+        assert!(!is_pandigital_u64(123456789, 10));
+        assert!(!is_pandigital_u64(12345678900, 10));
+    }
+
+    #[test]
+    fn test_u64_edge_cases() {
+        assert!(!is_pandigital_u64(0, 0));
+        assert!(!is_pandigital_u64(0, 1));
+        assert!(!is_pandigital_u64(1, 11));
+        assert!(is_pandigital_u64(1, 1));
+        assert!(!is_pandigital_u64(10, 2));
+        assert!(!is_pandigital_u64(10, 2));
     }
 }

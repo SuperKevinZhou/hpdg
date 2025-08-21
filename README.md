@@ -10,10 +10,27 @@ This is a data generator for competitive programming (Olympaid in Informatics) p
 
 Compared to Luogu's CYaRon, this project aims to be a faster data generator written in Rust.
 
-## Features
+## Features (not all implemented yet)
 
 - Fast testcase input/output
   - Testcase output generation from std program
 - Multi-thread data generating for multi-testcase problems.
 - Graph (and tree) generating with various parameters.
-- Python port.
+- Python port and C++ port.
+
+## Current State
+
+- [ ] **Testcases**
+- [ ] **Graph**
+  - [x] *Edge*: weighted and unweighted edge which supports creating and printing
+  - [x] *SwitchGraph*: a simple graph which supports switching
+  - [ ] *Graph*:
+    - [x] Manual creating and editing
+    - [x] Print the graph in various mode
+    - [x] Generate trees and binary-trees
+    - [ ] Generate any graphs
+    - [ ] Generate directed and undirected DAGs
+    - [ ] Generate from degree sequences
+    - [ ] Generate connected graphs
+    - [ ] Generate forests
+  - [ ] *GraphMatrix*: a type of graph represented by adjacency matrix

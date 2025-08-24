@@ -4,6 +4,7 @@ pub struct IO {
     input_file: String,
     output_file: String,
     file_prefix: String,
+    data_id: Option<usize>,
     input_suffix: String,
     output_suffix: String,
 
@@ -22,6 +23,7 @@ impl IO {
             input_file,
             output_file,
             file_prefix,
+            data_id: None,
             input_suffix,
             output_suffix,
             input_content: String::new(),
@@ -45,6 +47,18 @@ impl IO {
         self
     }
 
+    pub fn data_id(&mut self, data_id: usize) -> &mut Self {
+        self.data_id = Some(data_id);
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn clear_data_id(&mut self) -> &mut Self {
+        self.data_id = None;
+        self.rebuild_filenames();
+        self
+    }
+
     pub fn input_suffix(&mut self, input_suffix: String) -> &mut Self {
         self.input_suffix = input_suffix.clone();
         self.input_file = format!("{}.{}", self.file_prefix, input_suffix);
@@ -58,8 +72,13 @@ impl IO {
     }
 
     fn rebuild_filenames(&mut self) {
-        self.input_file = format!("{}.{}", self.file_prefix, self.input_suffix);
-        self.output_file = format!("{}.{}", self.file_prefix, self.output_suffix);
+        if let Some(data_id) = self.data_id {
+            self.input_file = format!("{}{}.{}", self.file_prefix, data_id, self.input_suffix);
+            self.output_file = format!("{}{}.{}", self.file_prefix, data_id, self.output_suffix);
+        } else {
+            self.input_file = format!("{}.{}", self.file_prefix, self.input_suffix);
+            self.output_file = format!("{}.{}", self.file_prefix, self.output_suffix);
+        }
     }
 }
 

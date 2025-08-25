@@ -4,6 +4,8 @@ pub struct IO {
     input_file: String,
     output_file: String,
     file_prefix: String,
+    input_prefix: Option<String>,
+    output_prefix: Option<String>,
     data_id: Option<usize>,
     input_suffix: String,
     output_suffix: String,
@@ -23,6 +25,8 @@ impl IO {
             input_file,
             output_file,
             file_prefix,
+            input_prefix: None,
+            output_prefix: None,
             data_id: None,
             input_suffix,
             output_suffix,
@@ -47,6 +51,30 @@ impl IO {
         self
     }
 
+    pub fn input_prefix(&mut self, input_prefix: String) -> &mut Self {
+        self.input_prefix = Some(input_prefix);
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn output_prefix(&mut self, output_prefix: String) -> &mut Self {
+        self.output_prefix = Some(output_prefix);
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn clear_input_prefix(&mut self) -> &mut Self {
+        self.input_prefix = None;
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn clear_output_prefix(&mut self) -> &mut Self {
+        self.output_prefix = None;
+        self.rebuild_filenames();
+        self
+    }
+
     pub fn data_id(&mut self, data_id: usize) -> &mut Self {
         self.data_id = Some(data_id);
         self.rebuild_filenames();
@@ -61,23 +89,38 @@ impl IO {
 
     pub fn input_suffix(&mut self, input_suffix: String) -> &mut Self {
         self.input_suffix = input_suffix.clone();
-        self.input_file = format!("{}.{}", self.file_prefix, input_suffix);
+        self.rebuild_filenames();
         self
     }
 
     pub fn output_suffix(&mut self, output_suffix: String) -> &mut Self {
         self.output_suffix = output_suffix.clone();
-        self.output_file = format!("{}.{}", self.file_prefix, output_suffix);
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn input_extension(&mut self, input_extension: String) -> &mut Self {
+        self.input_suffix = input_extension;
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn output_extension(&mut self, output_extension: String) -> &mut Self {
+        self.output_suffix = output_extension;
+        self.rebuild_filenames();
         self
     }
 
     fn rebuild_filenames(&mut self) {
+        let input_prefix = self.input_prefix.as_deref().unwrap_or(&self.file_prefix);
+        let output_prefix = self.output_prefix.as_deref().unwrap_or(&self.file_prefix);
+
         if let Some(data_id) = self.data_id {
-            self.input_file = format!("{}{}.{}", self.file_prefix, data_id, self.input_suffix);
-            self.output_file = format!("{}{}.{}", self.file_prefix, data_id, self.output_suffix);
+            self.input_file = format!("{}{}.{}", input_prefix, data_id, self.input_suffix);
+            self.output_file = format!("{}{}.{}", output_prefix, data_id, self.output_suffix);
         } else {
-            self.input_file = format!("{}.{}", self.file_prefix, self.input_suffix);
-            self.output_file = format!("{}.{}", self.file_prefix, self.output_suffix);
+            self.input_file = format!("{}.{}", input_prefix, self.input_suffix);
+            self.output_file = format!("{}.{}", output_prefix, self.output_suffix);
         }
     }
 }

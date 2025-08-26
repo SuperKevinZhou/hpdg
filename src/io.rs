@@ -126,23 +126,23 @@ impl IO {
 }
 
 impl IO {
-    pub fn input_write<S: ToString>(&mut self, s: S) -> &mut Self {
-        self.input_content.push_str(&s.to_string());
+    pub fn input_write<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
+        let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}", s));
         self
     }
 
-    pub fn output_write<S: ToString>(&mut self, s: S) -> &mut Self {
-        self.output_content.push_str(&s.to_string());
+    pub fn output_write<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
+        let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}", s));
         self
     }
 
-    pub fn input_writeln<S: ToString>(&mut self, s: S) -> &mut Self {
-        self.input_write(format!("{}\n", s.to_string()));
+    pub fn input_writeln<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
+        let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}\n", s));
         self
     }
-
-    pub fn output_writeln<S: ToString>(&mut self, s: S) -> &mut Self {
-        self.output_write(format!("{}\n", s.to_string()));
+    
+    pub fn output_writeln<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
+        let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}\n", s));
         self
     }
 }

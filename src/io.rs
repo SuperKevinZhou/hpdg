@@ -145,6 +145,56 @@ impl IO {
         let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}\n", s));
         self
     }
+
+    pub fn input_write_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        let mut iter = items.into_iter();
+        if let Some(first) = iter.next() {
+            let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}", first));
+        }
+        for item in iter {
+            let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}{}", sep, item));
+        }
+        self
+    }
+
+    pub fn output_write_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        let mut iter = items.into_iter();
+        if let Some(first) = iter.next() {
+            let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}", first));
+        }
+        for item in iter {
+            let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}{}", sep, item));
+        }
+        self
+    }
+
+    pub fn input_writeln_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        self.input_write_sep(items, sep);
+        let _ = std::fmt::Write::write_str(&mut self.input_content, "\n");
+        self
+    }
+
+    pub fn output_writeln_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        self.output_write_sep(items, sep);
+        let _ = std::fmt::Write::write_str(&mut self.output_content, "\n");
+        self
+    }
 }
 
 #[cfg(test)]

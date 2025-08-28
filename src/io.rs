@@ -195,6 +195,16 @@ impl IO {
         let _ = std::fmt::Write::write_str(&mut self.output_content, "\n");
         self
     }
+
+    pub fn input_clear(&mut self) -> &mut Self {
+        self.input_content.clear();
+        self
+    }
+
+    pub fn output_clear(&mut self) -> &mut Self {
+        self.output_content.clear();
+        self
+    }
 }
 
 #[cfg(test)]

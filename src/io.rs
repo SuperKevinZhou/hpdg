@@ -205,6 +205,20 @@ impl IO {
         self.output_content.clear();
         self
     }
+
+    pub fn flush_input_to_disk(&self) -> std::io::Result<()> {
+        std::fs::write(&self.input_file, &self.input_content)
+    }
+
+    pub fn flush_output_to_disk(&self) -> std::io::Result<()> {
+        std::fs::write(&self.output_file, &self.output_content)
+    }
+
+    pub fn flush_to_disk(&self) -> std::io::Result<()> {
+        self.flush_input_to_disk()?;
+        self.flush_output_to_disk()?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

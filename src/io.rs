@@ -9,6 +9,8 @@ pub struct IO {
     data_id: Option<usize>,
     input_suffix: String,
     output_suffix: String,
+    auto_create_dirs: bool,
+    auto_clean_files: bool,
 
     input_content: String,
     output_content: String,
@@ -30,6 +32,8 @@ impl IO {
             data_id: None,
             input_suffix,
             output_suffix,
+            auto_create_dirs: true,
+            auto_clean_files: false,
             input_content: String::new(),
             output_content: String::new(),
         }
@@ -108,6 +112,16 @@ impl IO {
     pub fn output_extension(&mut self, output_extension: String) -> &mut Self {
         self.output_suffix = output_extension;
         self.rebuild_filenames();
+        self
+    }
+
+    pub fn auto_create_dirs(&mut self, enabled: bool) -> &mut Self {
+        self.auto_create_dirs = enabled;
+        self
+    }
+
+    pub fn auto_clean_files(&mut self, enabled: bool) -> &mut Self {
+        self.auto_clean_files = enabled;
         self
     }
 
@@ -207,16 +221,42 @@ impl IO {
     }
 
     pub fn flush_input_to_disk(&self) -> std::io::Result<()> {
+        if self.auto_create_dirs {
+            if let Some(parent) = std::path::Path::new(&self.input_file).parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+        }
+        if self.auto_clean_files {
+            let _ = std::fs::remove_file(&self.input_file);
+        }
         std::fs::write(&self.input_file, &self.input_content)
     }
 
     pub fn flush_output_to_disk(&self) -> std::io::Result<()> {
+        if self.auto_create_dirs {
+            if let Some(parent) = std::path::Path::new(&self.output_file).parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+        }
+        if self.auto_clean_files {
+            let _ = std::fs::remove_file(&self.output_file);
+        }
         std::fs::write(&self.output_file, &self.output_content)
     }
 
     pub fn flush_to_disk(&self) -> std::io::Result<()> {
         self.flush_input_to_disk()?;
         self.flush_output_to_disk()?;
+        Ok(())
+    }
+
+    pub fn cleanup_files(&self) -> std::io::Result<()> {
+        let _ = std::fs::remove_file(&self.input_file);
+        let _ = std::fs::remove_file(&self.output_file);
         Ok(())
     }
 }

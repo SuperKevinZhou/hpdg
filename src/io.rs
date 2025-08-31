@@ -40,12 +40,12 @@ impl IO {
     }
 
     pub fn input_file(&mut self, input_file: String) -> &mut Self {
-        self.input_file = input_file;
+        self.input_file = Self::normalize_path(&input_file);
         self
     }
 
     pub fn output_file(&mut self, output_file: String) -> &mut Self {
-        self.output_file = output_file;
+        self.output_file = Self::normalize_path(&output_file);
         self
     }
 
@@ -130,12 +130,19 @@ impl IO {
         let output_prefix = self.output_prefix.as_deref().unwrap_or(&self.file_prefix);
 
         if let Some(data_id) = self.data_id {
-            self.input_file = format!("{}{}.{}", input_prefix, data_id, self.input_suffix);
-            self.output_file = format!("{}{}.{}", output_prefix, data_id, self.output_suffix);
+            self.input_file = Self::normalize_path(&format!("{}{}.{}", input_prefix, data_id, self.input_suffix));
+            self.output_file = Self::normalize_path(&format!("{}{}.{}", output_prefix, data_id, self.output_suffix));
         } else {
-            self.input_file = format!("{}.{}", input_prefix, self.input_suffix);
-            self.output_file = format!("{}.{}", output_prefix, self.output_suffix);
+            self.input_file = Self::normalize_path(&format!("{}.{}", input_prefix, self.input_suffix));
+            self.output_file = Self::normalize_path(&format!("{}.{}", output_prefix, self.output_suffix));
         }
+    }
+
+    fn normalize_path(path: &str) -> String {
+        let sep = std::path::MAIN_SEPARATOR;
+        let mut buf = path.trim().to_string();
+        buf = buf.replace(['/', '\\'], sep);
+        buf
     }
 }
 

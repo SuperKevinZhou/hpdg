@@ -11,6 +11,7 @@ pub struct IO {
     output_suffix: String,
     auto_create_dirs: bool,
     auto_clean_files: bool,
+    allow_overwrite: bool,
 
     input_content: String,
     output_content: String,
@@ -34,6 +35,7 @@ impl IO {
             output_suffix,
             auto_create_dirs: true,
             auto_clean_files: false,
+            allow_overwrite: false,
             input_content: String::new(),
             output_content: String::new(),
         }
@@ -122,6 +124,11 @@ impl IO {
 
     pub fn auto_clean_files(&mut self, enabled: bool) -> &mut Self {
         self.auto_clean_files = enabled;
+        self
+    }
+
+    pub fn allow_overwrite(&mut self, enabled: bool) -> &mut Self {
+        self.allow_overwrite = enabled;
         self
     }
 
@@ -228,6 +235,7 @@ impl IO {
     }
 
     pub fn flush_input_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
         if self.auto_create_dirs {
             if let Some(parent) = std::path::Path::new(&self.input_file).parent() {
                 if !parent.as_os_str().is_empty() {
@@ -238,10 +246,17 @@ impl IO {
         if self.auto_clean_files {
             let _ = std::fs::remove_file(&self.input_file);
         }
+        if !self.allow_overwrite && std::path::Path::new(&self.input_file).exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "input file already exists",
+            ));
+        }
         std::fs::write(&self.input_file, &self.input_content)
     }
 
     pub fn flush_output_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
         if self.auto_create_dirs {
             if let Some(parent) = std::path::Path::new(&self.output_file).parent() {
                 if !parent.as_os_str().is_empty() {
@@ -252,12 +267,29 @@ impl IO {
         if self.auto_clean_files {
             let _ = std::fs::remove_file(&self.output_file);
         }
+        if !self.allow_overwrite && std::path::Path::new(&self.output_file).exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "output file already exists",
+            ));
+        }
         std::fs::write(&self.output_file, &self.output_content)
     }
 
     pub fn flush_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
         self.flush_input_to_disk()?;
         self.flush_output_to_disk()?;
+        Ok(())
+    }
+
+    fn ensure_no_conflict(&self) -> std::io::Result<()> {
+        if self.input_file == self.output_file {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "input and output file paths conflict",
+            ));
+        }
         Ok(())
     }
 

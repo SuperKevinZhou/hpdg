@@ -15,6 +15,8 @@ pub struct IO {
 
     input_content: String,
     output_content: String,
+    input_bytes: Vec<u8>,
+    output_bytes: Vec<u8>,
 }
 
 impl IO {
@@ -38,6 +40,8 @@ impl IO {
             allow_overwrite: false,
             input_content: String::new(),
             output_content: String::new(),
+            input_bytes: Vec::new(),
+            output_bytes: Vec::new(),
         }
     }
 
@@ -226,11 +230,23 @@ impl IO {
 
     pub fn input_clear(&mut self) -> &mut Self {
         self.input_content.clear();
+        self.input_bytes.clear();
         self
     }
 
     pub fn output_clear(&mut self) -> &mut Self {
         self.output_content.clear();
+        self.output_bytes.clear();
+        self
+    }
+
+    pub fn input_write_bytes(&mut self, bytes: &[u8]) -> &mut Self {
+        self.input_bytes.extend_from_slice(bytes);
+        self
+    }
+
+    pub fn output_write_bytes(&mut self, bytes: &[u8]) -> &mut Self {
+        self.output_bytes.extend_from_slice(bytes);
         self
     }
 
@@ -274,6 +290,55 @@ impl IO {
             ));
         }
         std::fs::write(&self.output_file, &self.output_content)
+    }
+
+    pub fn flush_input_bytes_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
+        if self.auto_create_dirs {
+            if let Some(parent) = std::path::Path::new(&self.input_file).parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+        }
+        if self.auto_clean_files {
+            let _ = std::fs::remove_file(&self.input_file);
+        }
+        if !self.allow_overwrite && std::path::Path::new(&self.input_file).exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "input file already exists",
+            ));
+        }
+        std::fs::write(&self.input_file, &self.input_bytes)
+    }
+
+    pub fn flush_output_bytes_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
+        if self.auto_create_dirs {
+            if let Some(parent) = std::path::Path::new(&self.output_file).parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+        }
+        if self.auto_clean_files {
+            let _ = std::fs::remove_file(&self.output_file);
+        }
+        if !self.allow_overwrite && std::path::Path::new(&self.output_file).exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "output file already exists",
+            ));
+        }
+        std::fs::write(&self.output_file, &self.output_bytes)
+    }
+
+    pub fn flush_bytes_to_disk(&self) -> std::io::Result<()> {
+        self.ensure_no_conflict()?;
+        self.flush_input_bytes_to_disk()?;
+        self.flush_output_bytes_to_disk()?;
+        Ok(())
     }
 
     pub fn flush_to_disk(&self) -> std::io::Result<()> {

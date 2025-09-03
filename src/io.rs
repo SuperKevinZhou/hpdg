@@ -252,85 +252,25 @@ impl IO {
 
     pub fn flush_input_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
-        if self.auto_create_dirs {
-            if let Some(parent) = std::path::Path::new(&self.input_file).parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-        }
-        if self.auto_clean_files {
-            let _ = std::fs::remove_file(&self.input_file);
-        }
-        if !self.allow_overwrite && std::path::Path::new(&self.input_file).exists() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                "input file already exists",
-            ));
-        }
+        self.prepare_path(&self.input_file)?;
         std::fs::write(&self.input_file, &self.input_content)
     }
 
     pub fn flush_output_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
-        if self.auto_create_dirs {
-            if let Some(parent) = std::path::Path::new(&self.output_file).parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-        }
-        if self.auto_clean_files {
-            let _ = std::fs::remove_file(&self.output_file);
-        }
-        if !self.allow_overwrite && std::path::Path::new(&self.output_file).exists() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                "output file already exists",
-            ));
-        }
+        self.prepare_path(&self.output_file)?;
         std::fs::write(&self.output_file, &self.output_content)
     }
 
     pub fn flush_input_bytes_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
-        if self.auto_create_dirs {
-            if let Some(parent) = std::path::Path::new(&self.input_file).parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-        }
-        if self.auto_clean_files {
-            let _ = std::fs::remove_file(&self.input_file);
-        }
-        if !self.allow_overwrite && std::path::Path::new(&self.input_file).exists() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                "input file already exists",
-            ));
-        }
+        self.prepare_path(&self.input_file)?;
         std::fs::write(&self.input_file, &self.input_bytes)
     }
 
     pub fn flush_output_bytes_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
-        if self.auto_create_dirs {
-            if let Some(parent) = std::path::Path::new(&self.output_file).parent() {
-                if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent)?;
-                }
-            }
-        }
-        if self.auto_clean_files {
-            let _ = std::fs::remove_file(&self.output_file);
-        }
-        if !self.allow_overwrite && std::path::Path::new(&self.output_file).exists() {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::AlreadyExists,
-                "output file already exists",
-            ));
-        }
+        self.prepare_path(&self.output_file)?;
         std::fs::write(&self.output_file, &self.output_bytes)
     }
 
@@ -362,6 +302,81 @@ impl IO {
         let _ = std::fs::remove_file(&self.input_file);
         let _ = std::fs::remove_file(&self.output_file);
         Ok(())
+    }
+
+    pub fn open_input_stream(&self) -> std::io::Result<IOStream> {
+        self.ensure_no_conflict()?;
+        self.prepare_path(&self.input_file)?;
+        let file = std::fs::File::create(&self.input_file)?;
+        Ok(IOStream {
+            writer: std::io::BufWriter::new(file),
+        })
+    }
+
+    pub fn open_output_stream(&self) -> std::io::Result<IOStream> {
+        self.ensure_no_conflict()?;
+        self.prepare_path(&self.output_file)?;
+        let file = std::fs::File::create(&self.output_file)?;
+        Ok(IOStream {
+            writer: std::io::BufWriter::new(file),
+        })
+    }
+
+    fn prepare_path(&self, path: &str) -> std::io::Result<()> {
+        if self.auto_create_dirs {
+            if let Some(parent) = std::path::Path::new(path).parent() {
+                if !parent.as_os_str().is_empty() {
+                    std::fs::create_dir_all(parent)?;
+                }
+            }
+        }
+        if self.auto_clean_files {
+            let _ = std::fs::remove_file(path);
+        }
+        if !self.allow_overwrite && std::path::Path::new(path).exists() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "target file already exists",
+            ));
+        }
+        Ok(())
+    }
+}
+
+pub struct IOStream {
+    writer: std::io::BufWriter<std::fs::File>,
+}
+
+impl IOStream {
+    pub fn write<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
+        use std::io::Write;
+        write!(self.writer, "{}", s)
+    }
+
+    pub fn writeln<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
+        use std::io::Write;
+        writeln!(self.writer, "{}", s)
+    }
+
+    pub fn write_sep<I, T>(&mut self, items: I, sep: &str) -> std::io::Result<()>
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        use std::io::Write;
+        let mut iter = items.into_iter();
+        if let Some(first) = iter.next() {
+            write!(self.writer, "{}", first)?;
+        }
+        for item in iter {
+            write!(self.writer, "{}{}", sep, item)?;
+        }
+        Ok(())
+    }
+
+    pub fn flush(&mut self) -> std::io::Result<()> {
+        use std::io::Write;
+        self.writer.flush()
     }
 }
 

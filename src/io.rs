@@ -1,4 +1,45 @@
 /// IO module for generating testcase input/output buffers and filenames.
+pub trait Formatter {
+    fn format_item(&self, item: &dyn std::fmt::Display) -> String;
+    fn join(&self, items: &[String]) -> String;
+
+    fn format_iter<I, T>(&self, items: I) -> String
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+        Self: Sized,
+    {
+        let rendered: Vec<String> = items.into_iter().map(|item| self.format_item(&item)).collect();
+        self.join(&rendered)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SepFormatter {
+    sep: String,
+}
+
+impl SepFormatter {
+    pub fn new(sep: String) -> Self {
+        Self { sep }
+    }
+}
+
+impl Formatter for SepFormatter {
+    fn format_item(&self, item: &dyn std::fmt::Display) -> String {
+        format!("{}", item)
+    }
+
+    fn join(&self, items: &[String]) -> String {
+        items.join(&self.sep)
+    }
+}
+
+impl Default for SepFormatter {
+    fn default() -> Self {
+        Self { sep: " ".to_string() }
+    }
+}
 #[derive(Debug, Clone)]
 pub struct IO {
     input_file: String,
@@ -225,6 +266,32 @@ impl IO {
     {
         self.output_write_sep(items, sep);
         let _ = std::fmt::Write::write_str(&mut self.output_content, "\n");
+        self
+    }
+
+    pub fn input_write_with<I, T>(&mut self, formatter: &dyn Formatter, items: I) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        let rendered: Vec<String> = items
+            .into_iter()
+            .map(|item| formatter.format_item(&item))
+            .collect();
+        self.input_content.push_str(&formatter.join(&rendered));
+        self
+    }
+
+    pub fn output_write_with<I, T>(&mut self, formatter: &dyn Formatter, items: I) -> &mut Self
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        let rendered: Vec<String> = items
+            .into_iter()
+            .map(|item| formatter.format_item(&item))
+            .collect();
+        self.output_content.push_str(&formatter.join(&rendered));
         self
     }
 

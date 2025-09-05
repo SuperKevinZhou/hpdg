@@ -295,6 +295,28 @@ impl IO {
         self
     }
 
+    pub fn input_writeln_slice<T: std::fmt::Display>(&mut self, slice: &[T], sep: &str) -> &mut Self {
+        self.input_writeln_sep(slice.iter(), sep)
+    }
+
+    pub fn output_writeln_slice<T: std::fmt::Display>(&mut self, slice: &[T], sep: &str) -> &mut Self {
+        self.output_writeln_sep(slice.iter(), sep)
+    }
+
+    pub fn input_writeln_matrix<T: std::fmt::Display>(&mut self, matrix: &[Vec<T>], sep: &str) -> &mut Self {
+        for row in matrix {
+            self.input_writeln_sep(row.iter(), sep);
+        }
+        self
+    }
+
+    pub fn output_writeln_matrix<T: std::fmt::Display>(&mut self, matrix: &[Vec<T>], sep: &str) -> &mut Self {
+        for row in matrix {
+            self.output_writeln_sep(row.iter(), sep);
+        }
+        self
+    }
+
     pub fn input_clear(&mut self) -> &mut Self {
         self.input_content.clear();
         self.input_bytes.clear();

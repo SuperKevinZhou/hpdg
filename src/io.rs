@@ -469,6 +469,57 @@ impl IOStream {
     }
 }
 
+pub struct IOBatchBuilder {
+    prefix: String,
+    data_ids: Vec<usize>,
+    input_suffix: String,
+    output_suffix: String,
+}
+
+impl IOBatchBuilder {
+    pub fn new(prefix: String) -> Self {
+        Self {
+            prefix,
+            data_ids: Vec::new(),
+            input_suffix: "in".to_string(),
+            output_suffix: "out".to_string(),
+        }
+    }
+
+    pub fn data_ids<I: IntoIterator<Item = usize>>(mut self, ids: I) -> Self {
+        self.data_ids = ids.into_iter().collect();
+        self
+    }
+
+    pub fn range(mut self, start: usize, end_inclusive: usize) -> Self {
+        self.data_ids = (start..=end_inclusive).collect();
+        self
+    }
+
+    pub fn input_suffix(mut self, input_suffix: String) -> Self {
+        self.input_suffix = input_suffix;
+        self
+    }
+
+    pub fn output_suffix(mut self, output_suffix: String) -> Self {
+        self.output_suffix = output_suffix;
+        self
+    }
+
+    pub fn build(self) -> Vec<IO> {
+        self.data_ids
+            .into_iter()
+            .map(|id| {
+                let mut io = IO::new(self.prefix.clone());
+                io.input_suffix(self.input_suffix.clone());
+                io.output_suffix(self.output_suffix.clone());
+                io.data_id(id);
+                io
+            })
+            .collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

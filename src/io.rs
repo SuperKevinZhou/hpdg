@@ -48,6 +48,8 @@ pub struct IO {
     input_prefix: Option<String>,
     output_prefix: Option<String>,
     data_id: Option<usize>,
+    data_id_separator: String,
+    data_id_width: Option<usize>,
     input_suffix: String,
     output_suffix: String,
     auto_create_dirs: bool,
@@ -74,6 +76,8 @@ impl IO {
             input_prefix: None,
             output_prefix: None,
             data_id: None,
+            data_id_separator: "".to_string(),
+            data_id_width: None,
             input_suffix,
             output_suffix,
             auto_create_dirs: true,
@@ -132,6 +136,18 @@ impl IO {
         self
     }
 
+    pub fn data_id_separator(&mut self, separator: String) -> &mut Self {
+        self.data_id_separator = separator;
+        self.rebuild_filenames();
+        self
+    }
+
+    pub fn data_id_width(&mut self, width: Option<usize>) -> &mut Self {
+        self.data_id_width = width;
+        self.rebuild_filenames();
+        self
+    }
+
     pub fn clear_data_id(&mut self) -> &mut Self {
         self.data_id = None;
         self.rebuild_filenames();
@@ -182,8 +198,26 @@ impl IO {
         let output_prefix = self.output_prefix.as_deref().unwrap_or(&self.file_prefix);
 
         if let Some(data_id) = self.data_id {
-            self.input_file = Self::normalize_path(&format!("{}{}.{}", input_prefix, data_id, self.input_suffix));
-            self.output_file = Self::normalize_path(&format!("{}{}.{}", output_prefix, data_id, self.output_suffix));
+            let id = if let Some(width) = self.data_id_width {
+                format!("{:0width$}", data_id, width = width)
+            } else {
+                data_id.to_string()
+            };
+            let joiner = &self.data_id_separator;
+            self.input_file = Self::normalize_path(&format!(
+                "{}{}{}.{}",
+                input_prefix,
+                joiner,
+                id,
+                self.input_suffix
+            ));
+            self.output_file = Self::normalize_path(&format!(
+                "{}{}{}.{}",
+                output_prefix,
+                joiner,
+                id,
+                self.output_suffix
+            ));
         } else {
             self.input_file = Self::normalize_path(&format!("{}.{}", input_prefix, self.input_suffix));
             self.output_file = Self::normalize_path(&format!("{}.{}", output_prefix, self.output_suffix));
@@ -474,6 +508,8 @@ pub struct IOBatchBuilder {
     data_ids: Vec<usize>,
     input_suffix: String,
     output_suffix: String,
+    data_id_separator: String,
+    data_id_width: Option<usize>,
 }
 
 impl IOBatchBuilder {
@@ -483,6 +519,8 @@ impl IOBatchBuilder {
             data_ids: Vec::new(),
             input_suffix: "in".to_string(),
             output_suffix: "out".to_string(),
+            data_id_separator: "".to_string(),
+            data_id_width: None,
         }
     }
 
@@ -506,6 +544,16 @@ impl IOBatchBuilder {
         self
     }
 
+    pub fn data_id_separator(mut self, separator: String) -> Self {
+        self.data_id_separator = separator;
+        self
+    }
+
+    pub fn data_id_width(mut self, width: Option<usize>) -> Self {
+        self.data_id_width = width;
+        self
+    }
+
     pub fn build(self) -> Vec<IO> {
         self.data_ids
             .into_iter()
@@ -513,6 +561,8 @@ impl IOBatchBuilder {
                 let mut io = IO::new(self.prefix.clone());
                 io.input_suffix(self.input_suffix.clone());
                 io.output_suffix(self.output_suffix.clone());
+                io.data_id_separator(self.data_id_separator.clone());
+                io.data_id_width(self.data_id_width);
                 io.data_id(id);
                 io
             })

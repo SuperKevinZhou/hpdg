@@ -445,6 +445,23 @@ impl IO {
         })
     }
 
+    pub fn output_gen(&mut self, program: &str) -> std::io::Result<()> {
+        let mut child = std::process::Command::new(program)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .spawn()?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            stdin.write_all(self.input_content.as_bytes())?;
+        }
+
+        let output = child.wait_with_output()?;
+        self.output_bytes = output.stdout.clone();
+        self.output_content = String::from_utf8_lossy(&output.stdout).to_string();
+        Ok(())
+    }
+
     fn prepare_path(&self, path: &str) -> std::io::Result<()> {
         if self.auto_create_dirs {
             if let Some(parent) = std::path::Path::new(path).parent() {

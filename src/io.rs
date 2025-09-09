@@ -462,6 +462,21 @@ impl IO {
         Ok(())
     }
 
+    pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
+        self.flush_input_to_disk()?;
+        let input_file = std::fs::File::open(&self.input_file)?;
+        let output_file = std::fs::File::create(&self.output_file)?;
+
+        let _ = std::process::Command::new(program)
+            .stdin(input_file)
+            .stdout(output_file)
+            .status()?;
+
+        self.output_bytes = std::fs::read(&self.output_file)?;
+        self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
+        Ok(())
+    }
+
     fn prepare_path(&self, path: &str) -> std::io::Result<()> {
         if self.auto_create_dirs {
             if let Some(parent) = std::path::Path::new(path).parent() {

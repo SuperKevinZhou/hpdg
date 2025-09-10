@@ -421,6 +421,37 @@ impl IO {
         Ok(())
     }
 
+    fn ensure_exit_status(&self, status: &std::process::ExitStatus) -> std::io::Result<()> {
+        if status.success() {
+            Ok(())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("process exited with status: {status}"),
+            ))
+        }
+    }
+
+    fn wait_with_timeout(
+        child: &mut std::process::Child,
+        timeout: std::time::Duration,
+    ) -> std::io::Result<std::process::ExitStatus> {
+        let start = std::time::Instant::now();
+        loop {
+            if let Some(status) = child.try_wait()? {
+                return Ok(status);
+            }
+            if start.elapsed() >= timeout {
+                let _ = child.kill();
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    "process timed out",
+                ));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
+
     pub fn cleanup_files(&self) -> std::io::Result<()> {
         let _ = std::fs::remove_file(&self.input_file);
         let _ = std::fs::remove_file(&self.output_file);
@@ -457,6 +488,7 @@ impl IO {
         }
 
         let output = child.wait_with_output()?;
+        self.ensure_exit_status(&output.status)?;
         self.output_bytes = output.stdout.clone();
         self.output_content = String::from_utf8_lossy(&output.stdout).to_string();
         Ok(())
@@ -467,13 +499,43 @@ impl IO {
         let input_file = std::fs::File::open(&self.input_file)?;
         let output_file = std::fs::File::create(&self.output_file)?;
 
-        let _ = std::process::Command::new(program)
+        let status = std::process::Command::new(program)
             .stdin(input_file)
             .stdout(output_file)
             .status()?;
 
         self.output_bytes = std::fs::read(&self.output_file)?;
         self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
+        self.ensure_exit_status(&status)?;
+        Ok(())
+    }
+
+    pub fn output_gen_with_timeout(
+        &mut self,
+        program: &str,
+        timeout: std::time::Duration,
+    ) -> std::io::Result<()> {
+        self.output_gen_with_files_timeout(program, timeout)
+    }
+
+    pub fn output_gen_with_files_timeout(
+        &mut self,
+        program: &str,
+        timeout: std::time::Duration,
+    ) -> std::io::Result<()> {
+        self.flush_input_to_disk()?;
+        let input_file = std::fs::File::open(&self.input_file)?;
+        let output_file = std::fs::File::create(&self.output_file)?;
+
+        let mut child = std::process::Command::new(program)
+            .stdin(input_file)
+            .stdout(output_file)
+            .spawn()?;
+
+        let status = Self::wait_with_timeout(&mut child, timeout)?;
+        self.output_bytes = std::fs::read(&self.output_file)?;
+        self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
+        self.ensure_exit_status(&status)?;
         Ok(())
     }
 

@@ -442,7 +442,7 @@ impl IO {
                 return Ok(status);
             }
             if start.elapsed() >= timeout {
-                let _ = child.kill();
+                let _ = Self::kill_child(child);
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::TimedOut,
                     "process timed out",
@@ -450,6 +450,12 @@ impl IO {
             }
             std::thread::sleep(std::time::Duration::from_millis(10));
         }
+    }
+
+    fn kill_child(child: &mut std::process::Child) -> std::io::Result<()> {
+        let _ = child.kill();
+        let _ = child.wait();
+        Ok(())
     }
 
     pub fn cleanup_files(&self) -> std::io::Result<()> {

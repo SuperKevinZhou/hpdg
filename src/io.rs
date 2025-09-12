@@ -60,6 +60,8 @@ pub struct IO {
     output_content: String,
     input_bytes: Vec<u8>,
     output_bytes: Vec<u8>,
+    last_stderr: Vec<u8>,
+    last_stderr_text: String,
 }
 
 impl IO {
@@ -87,6 +89,8 @@ impl IO {
             output_content: String::new(),
             input_bytes: Vec::new(),
             output_bytes: Vec::new(),
+            last_stderr: Vec::new(),
+            last_stderr_text: String::new(),
         }
     }
 
@@ -486,6 +490,7 @@ impl IO {
         let mut child = std::process::Command::new(program)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
             .spawn()?;
 
         if let Some(mut stdin) = child.stdin.take() {
@@ -497,6 +502,8 @@ impl IO {
         self.ensure_exit_status(&output.status)?;
         self.output_bytes = output.stdout.clone();
         self.output_content = String::from_utf8_lossy(&output.stdout).to_string();
+        self.last_stderr = output.stderr.clone();
+        self.last_stderr_text = String::from_utf8_lossy(&output.stderr).to_string();
         Ok(())
     }
 
@@ -505,13 +512,27 @@ impl IO {
         let input_file = std::fs::File::open(&self.input_file)?;
         let output_file = std::fs::File::create(&self.output_file)?;
 
-        let status = std::process::Command::new(program)
+        let mut child = std::process::Command::new(program)
             .stdin(input_file)
             .stdout(output_file)
-            .status()?;
+            .stderr(std::process::Stdio::piped())
+            .spawn()?;
+
+        let mut stderr = child.stderr.take();
+        let status = child.wait()?;
 
         self.output_bytes = std::fs::read(&self.output_file)?;
         self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
+        if let Some(mut stderr) = stderr.take() {
+            use std::io::Read;
+            let mut buf = Vec::new();
+            let _ = stderr.read_to_end(&mut buf);
+            self.last_stderr = buf;
+            self.last_stderr_text = String::from_utf8_lossy(&self.last_stderr).to_string();
+        } else {
+            self.last_stderr.clear();
+            self.last_stderr_text.clear();
+        }
         self.ensure_exit_status(&status)?;
         Ok(())
     }
@@ -536,11 +557,23 @@ impl IO {
         let mut child = std::process::Command::new(program)
             .stdin(input_file)
             .stdout(output_file)
+            .stderr(std::process::Stdio::piped())
             .spawn()?;
 
+        let mut stderr = child.stderr.take();
         let status = Self::wait_with_timeout(&mut child, timeout)?;
         self.output_bytes = std::fs::read(&self.output_file)?;
         self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
+        if let Some(mut stderr) = stderr.take() {
+            use std::io::Read;
+            let mut buf = Vec::new();
+            let _ = stderr.read_to_end(&mut buf);
+            self.last_stderr = buf;
+            self.last_stderr_text = String::from_utf8_lossy(&self.last_stderr).to_string();
+        } else {
+            self.last_stderr.clear();
+            self.last_stderr_text.clear();
+        }
         self.ensure_exit_status(&status)?;
         Ok(())
     }

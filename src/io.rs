@@ -40,6 +40,16 @@ impl Default for SepFormatter {
         Self { sep: " ".to_string() }
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct OutputCapture {
+    pub code: Option<i32>,
+    pub success: bool,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+    pub stdout_text: String,
+    pub stderr_text: String,
+}
 #[derive(Debug, Clone)]
 pub struct IO {
     input_file: String,
@@ -62,6 +72,7 @@ pub struct IO {
     output_bytes: Vec<u8>,
     last_stderr: Vec<u8>,
     last_stderr_text: String,
+    last_capture: Option<OutputCapture>,
 }
 
 impl IO {
@@ -91,6 +102,7 @@ impl IO {
             output_bytes: Vec::new(),
             last_stderr: Vec::new(),
             last_stderr_text: String::new(),
+            last_capture: None,
         }
     }
 
@@ -425,6 +437,30 @@ impl IO {
         Ok(())
     }
 
+    pub fn last_capture(&self) -> Option<&OutputCapture> {
+        self.last_capture.as_ref()
+    }
+
+    fn set_capture(
+        &mut self,
+        status: &std::process::ExitStatus,
+        stdout: Vec<u8>,
+        stderr: Vec<u8>,
+    ) {
+        self.output_bytes = stdout.clone();
+        self.output_content = String::from_utf8_lossy(&stdout).to_string();
+        self.last_stderr = stderr.clone();
+        self.last_stderr_text = String::from_utf8_lossy(&stderr).to_string();
+        self.last_capture = Some(OutputCapture {
+            code: status.code(),
+            success: status.success(),
+            stdout: stdout.clone(),
+            stderr: stderr.clone(),
+            stdout_text: String::from_utf8_lossy(&stdout).to_string(),
+            stderr_text: String::from_utf8_lossy(&stderr).to_string(),
+        });
+    }
+
     fn ensure_exit_status(&self, status: &std::process::ExitStatus) -> std::io::Result<()> {
         if status.success() {
             Ok(())
@@ -500,10 +536,7 @@ impl IO {
 
         let output = child.wait_with_output()?;
         self.ensure_exit_status(&output.status)?;
-        self.output_bytes = output.stdout.clone();
-        self.output_content = String::from_utf8_lossy(&output.stdout).to_string();
-        self.last_stderr = output.stderr.clone();
-        self.last_stderr_text = String::from_utf8_lossy(&output.stderr).to_string();
+        self.set_capture(&output.status, output.stdout, output.stderr);
         Ok(())
     }
 
@@ -521,18 +554,16 @@ impl IO {
         let mut stderr = child.stderr.take();
         let status = child.wait()?;
 
-        self.output_bytes = std::fs::read(&self.output_file)?;
-        self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
-        if let Some(mut stderr) = stderr.take() {
+        let stdout = std::fs::read(&self.output_file)?;
+        let stderr = if let Some(mut stderr) = stderr.take() {
             use std::io::Read;
             let mut buf = Vec::new();
             let _ = stderr.read_to_end(&mut buf);
-            self.last_stderr = buf;
-            self.last_stderr_text = String::from_utf8_lossy(&self.last_stderr).to_string();
+            buf
         } else {
-            self.last_stderr.clear();
-            self.last_stderr_text.clear();
-        }
+            Vec::new()
+        };
+        self.set_capture(&status, stdout, stderr);
         self.ensure_exit_status(&status)?;
         Ok(())
     }
@@ -562,18 +593,16 @@ impl IO {
 
         let mut stderr = child.stderr.take();
         let status = Self::wait_with_timeout(&mut child, timeout)?;
-        self.output_bytes = std::fs::read(&self.output_file)?;
-        self.output_content = String::from_utf8_lossy(&self.output_bytes).to_string();
-        if let Some(mut stderr) = stderr.take() {
+        let stdout = std::fs::read(&self.output_file)?;
+        let stderr = if let Some(mut stderr) = stderr.take() {
             use std::io::Read;
             let mut buf = Vec::new();
             let _ = stderr.read_to_end(&mut buf);
-            self.last_stderr = buf;
-            self.last_stderr_text = String::from_utf8_lossy(&self.last_stderr).to_string();
+            buf
         } else {
-            self.last_stderr.clear();
-            self.last_stderr_text.clear();
-        }
+            Vec::new()
+        };
+        self.set_capture(&status, stdout, stderr);
         self.ensure_exit_status(&status)?;
         Ok(())
     }

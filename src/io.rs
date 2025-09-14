@@ -540,6 +540,23 @@ impl IO {
         Ok(())
     }
 
+    pub fn output_gen_string_only(&self, program: &str) -> std::io::Result<String> {
+        let mut child = std::process::Command::new(program)
+            .stdin(std::process::Stdio::piped())
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()?;
+
+        if let Some(mut stdin) = child.stdin.take() {
+            use std::io::Write;
+            stdin.write_all(self.input_content.as_bytes())?;
+        }
+
+        let output = child.wait_with_output()?;
+        self.ensure_exit_status(&output.status)?;
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    }
+
     pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
         self.flush_input_to_disk()?;
         let input_file = std::fs::File::open(&self.input_file)?;

@@ -73,6 +73,7 @@ pub struct IO {
     last_stderr: Vec<u8>,
     last_stderr_text: String,
     last_capture: Option<OutputCapture>,
+    logger: Option<fn(&str)>,
 }
 
 impl IO {
@@ -103,6 +104,7 @@ impl IO {
             last_stderr: Vec::new(),
             last_stderr_text: String::new(),
             last_capture: None,
+            logger: None,
         }
     }
 
@@ -201,6 +203,11 @@ impl IO {
 
     pub fn auto_clean_files(&mut self, enabled: bool) -> &mut Self {
         self.auto_clean_files = enabled;
+        self
+    }
+
+    pub fn logger(&mut self, logger: Option<fn(&str)>) -> &mut Self {
+        self.logger = logger;
         self
     }
 
@@ -422,8 +429,10 @@ impl IO {
 
     pub fn flush_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
+        self.log("flush_to_disk: start");
         self.flush_input_to_disk()?;
         self.flush_output_to_disk()?;
+        self.log("flush_to_disk: done");
         Ok(())
     }
 
@@ -459,6 +468,12 @@ impl IO {
             stdout_text: String::from_utf8_lossy(&stdout).to_string(),
             stderr_text: String::from_utf8_lossy(&stderr).to_string(),
         });
+    }
+
+    fn log(&self, msg: &str) {
+        if let Some(logger) = self.logger {
+            logger(msg);
+        }
     }
 
     fn ensure_exit_status(&self, status: &std::process::ExitStatus) -> std::io::Result<()> {
@@ -523,6 +538,7 @@ impl IO {
     }
 
     pub fn output_gen(&mut self, program: &str) -> std::io::Result<()> {
+        self.log("output_gen: start");
         let mut child = std::process::Command::new(program)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -537,6 +553,7 @@ impl IO {
         let output = child.wait_with_output()?;
         self.ensure_exit_status(&output.status)?;
         self.set_capture(&output.status, output.stdout, output.stderr);
+        self.log("output_gen: done");
         Ok(())
     }
 
@@ -558,6 +575,7 @@ impl IO {
     }
 
     pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
+        self.log("output_gen_with_files: start");
         self.flush_input_to_disk()?;
         let input_file = std::fs::File::open(&self.input_file)?;
         let output_file = std::fs::File::create(&self.output_file)?;
@@ -582,6 +600,7 @@ impl IO {
         };
         self.set_capture(&status, stdout, stderr);
         self.ensure_exit_status(&status)?;
+        self.log("output_gen_with_files: done");
         Ok(())
     }
 
@@ -598,6 +617,7 @@ impl IO {
         program: &str,
         timeout: std::time::Duration,
     ) -> std::io::Result<()> {
+        self.log("output_gen_with_files_timeout: start");
         self.flush_input_to_disk()?;
         let input_file = std::fs::File::open(&self.input_file)?;
         let output_file = std::fs::File::create(&self.output_file)?;
@@ -621,6 +641,7 @@ impl IO {
         };
         self.set_capture(&status, stdout, stderr);
         self.ensure_exit_status(&status)?;
+        self.log("output_gen_with_files_timeout: done");
         Ok(())
     }
 

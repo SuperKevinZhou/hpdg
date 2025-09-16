@@ -645,6 +645,44 @@ impl IO {
         Ok(())
     }
 
+    pub fn output_gen_parallel(ios: &mut [IO], program: &str) -> std::io::Result<()> {
+        let program = program.to_string();
+        let mut first_err: Option<std::io::Error> = None;
+
+        std::thread::scope(|s| {
+            let mut handles = Vec::with_capacity(ios.len());
+            for io in ios {
+                let program = program.clone();
+                handles.push(s.spawn(move || io.output_gen(&program)));
+            }
+
+            for handle in handles {
+                match handle.join() {
+                    Ok(Ok(())) => {}
+                    Ok(Err(err)) => {
+                        if first_err.is_none() {
+                            first_err = Some(err);
+                        }
+                    }
+                    Err(_) => {
+                        if first_err.is_none() {
+                            first_err = Some(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                "worker thread panicked",
+                            ));
+                        }
+                    }
+                }
+            }
+        });
+
+        if let Some(err) = first_err {
+            Err(err)
+        } else {
+            Ok(())
+        }
+    }
+
     fn prepare_path(&self, path: &str) -> std::io::Result<()> {
         if self.auto_create_dirs {
             if let Some(parent) = std::path::Path::new(path).parent() {

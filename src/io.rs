@@ -50,6 +50,31 @@ pub struct OutputCapture {
     pub stdout_text: String,
     pub stderr_text: String,
 }
+
+#[derive(Debug)]
+pub enum IOError {
+    Io(std::io::Error),
+    Process(String),
+}
+
+impl std::fmt::Display for IOError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IOError::Io(err) => write!(f, "io error: {}", err),
+            IOError::Process(msg) => write!(f, "process error: {}", msg),
+        }
+    }
+}
+
+impl std::error::Error for IOError {}
+
+impl From<std::io::Error> for IOError {
+    fn from(value: std::io::Error) -> Self {
+        IOError::Io(value)
+    }
+}
+
+pub type IOResult<T> = Result<T, IOError>;
 #[derive(Debug, Clone)]
 pub struct IO {
     input_file: String,
@@ -436,6 +461,10 @@ impl IO {
         Ok(())
     }
 
+    pub fn flush_to_disk_result(&self) -> IOResult<()> {
+        self.flush_to_disk().map_err(IOError::from)
+    }
+
     fn ensure_no_conflict(&self) -> std::io::Result<()> {
         if self.input_file == self.output_file {
             return Err(std::io::Error::new(
@@ -555,6 +584,10 @@ impl IO {
         self.set_capture(&output.status, output.stdout, output.stderr);
         self.log("output_gen: done");
         Ok(())
+    }
+
+    pub fn output_gen_result(&mut self, program: &str) -> IOResult<()> {
+        self.output_gen(program).map_err(IOError::from)
     }
 
     pub fn output_gen_string_only(&self, program: &str) -> std::io::Result<String> {

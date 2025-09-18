@@ -854,4 +854,23 @@ mod tests {
         assert_eq!(testcase_1.input_suffix, "in".to_string());
         assert_eq!(testcase_1.output_suffix, "out".to_string());
     }
+
+    #[test]
+    fn test_naming_with_data_id() {
+        let mut io = IO::new("data".to_string());
+        io.data_id_separator("_".to_string())
+            .data_id_width(Some(2))
+            .data_id(3);
+        assert_eq!(io.input_file, "data_03.in".to_string());
+        assert_eq!(io.output_file, "data_03.out".to_string());
+    }
+
+    #[test]
+    fn test_write_and_clear() {
+        let mut io = IO::new("buf".to_string());
+        io.input_write("1").input_writeln("2");
+        assert_eq!(io.input_content, "12\n".to_string());
+        io.input_clear();
+        assert_eq!(io.input_content, "".to_string());
+    }
 }

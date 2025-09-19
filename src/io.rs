@@ -873,4 +873,38 @@ mod tests {
         io.input_clear();
         assert_eq!(io.input_content, "".to_string());
     }
+
+    #[test]
+    #[ignore]
+    fn test_output_gen_basic() {
+        use std::fs;
+        use std::path::PathBuf;
+
+        let temp_dir = std::env::temp_dir().join("hpdg_io_tests");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let script_path: PathBuf = if cfg!(windows) {
+            temp_dir.join("echo_test.bat")
+        } else {
+            temp_dir.join("echo_test.sh")
+        };
+
+        if cfg!(windows) {
+            let _ = fs::write(&script_path, "@echo off\r\necho ok\r\n");
+        } else {
+            let _ = fs::write(&script_path, "#!/bin/sh\necho ok\n");
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mut perms = fs::metadata(&script_path).unwrap().permissions();
+                perms.set_mode(0o755);
+                let _ = fs::set_permissions(&script_path, perms);
+            }
+        }
+
+        let mut io = IO::new(temp_dir.join("case").to_string_lossy().to_string());
+        io.input_write("input");
+        let _ = io.output_gen(script_path.to_string_lossy().as_ref());
+        assert!(io.output_content.trim().ends_with("ok"));
+    }
 }

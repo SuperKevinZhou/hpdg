@@ -1,4 +1,13 @@
 /// IO module for generating testcase input/output buffers and filenames.
+///
+/// # Example
+/// ```rust
+/// use hpdg::io::IO;
+///
+/// let mut io = IO::new("sample".to_string());
+/// io.input_writeln("1 2 3");
+/// io.output_writeln("ok");
+/// ```
 pub trait Formatter {
     fn format_item(&self, item: &dyn std::fmt::Display) -> String;
     fn join(&self, items: &[String]) -> String;
@@ -15,6 +24,7 @@ pub trait Formatter {
 }
 
 #[derive(Debug, Clone)]
+/// A formatter that joins items with a separator.
 pub struct SepFormatter {
     sep: String,
 }
@@ -42,6 +52,7 @@ impl Default for SepFormatter {
 }
 
 #[derive(Debug, Clone)]
+/// Capture of a program execution.
 pub struct OutputCapture {
     pub code: Option<i32>,
     pub success: bool,
@@ -75,7 +86,9 @@ impl From<std::io::Error> for IOError {
 }
 
 pub type IOResult<T> = Result<T, IOError>;
+
 #[derive(Debug, Clone)]
+/// Testcase input/output buffer and file naming helper.
 pub struct IO {
     input_file: String,
     output_file: String,
@@ -737,6 +750,7 @@ impl IO {
     }
 }
 
+/// A streaming writer to avoid buffering the whole output in memory.
 pub struct IOStream {
     writer: std::io::BufWriter<std::fs::File>,
 }
@@ -774,6 +788,7 @@ impl IOStream {
     }
 }
 
+/// Batch builder for multiple testcases.
 pub struct IOBatchBuilder {
     prefix: String,
     data_ids: Vec<usize>,

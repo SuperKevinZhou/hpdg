@@ -579,6 +579,7 @@ impl IO {
         })
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen(&mut self, program: &str) -> std::io::Result<()> {
         self.log("output_gen: start");
         let mut child = std::process::Command::new(program)
@@ -599,10 +600,12 @@ impl IO {
         Ok(())
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen_result(&mut self, program: &str) -> IOResult<()> {
         self.output_gen(program).map_err(IOError::from)
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen_string_only(&self, program: &str) -> std::io::Result<String> {
         let mut child = std::process::Command::new(program)
             .stdin(std::process::Stdio::piped())
@@ -620,6 +623,7 @@ impl IO {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
         self.log("output_gen_with_files: start");
         self.flush_input_to_disk()?;
@@ -650,6 +654,7 @@ impl IO {
         Ok(())
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen_with_timeout(
         &mut self,
         program: &str,
@@ -658,6 +663,7 @@ impl IO {
         self.output_gen_with_files_timeout(program, timeout)
     }
 
+    #[cfg(feature = "proc")]
     pub fn output_gen_with_files_timeout(
         &mut self,
         program: &str,
@@ -691,6 +697,7 @@ impl IO {
         Ok(())
     }
 
+    #[cfg(all(feature = "parallel", feature = "proc"))]
     pub fn output_gen_parallel(ios: &mut [IO], program: &str) -> std::io::Result<()> {
         let program = program.to_string();
         let mut first_err: Option<std::io::Error> = None;
@@ -889,6 +896,7 @@ mod tests {
         assert_eq!(io.input_content, "".to_string());
     }
 
+    #[cfg(feature = "proc")]
     #[test]
     #[ignore]
     fn test_output_gen_basic() {

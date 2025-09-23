@@ -16,6 +16,14 @@ impl Edge {
             Edge { u, v, w: 0, weighted: false }
         }
     }
+
+    pub fn format_default(&self) -> String {
+        if self.weighted {
+            format!("{} {} {}", self.u, self.v, self.w)
+        } else {
+            format!("{} {}", self.u, self.v)
+        }
+    }
 }
 
 // impl Edge {
@@ -26,11 +34,7 @@ impl Edge {
 
 impl fmt::Display for Edge {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.weighted {
-            write!(f, "{} {} {}", self.u, self.v, self.w)
-        } else {
-            write!(f, "{} {}", self.u, self.v)
-        }
+        write!(f, "{}", self.format_default())
     }
 }
 

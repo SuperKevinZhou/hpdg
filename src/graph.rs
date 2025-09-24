@@ -44,9 +44,33 @@ impl From<Edge> for (usize, usize) {
     }
 }
 
+impl From<(usize, usize)> for Edge {
+    fn from(value: (usize, usize)) -> Self {
+        Edge { u: value.0, v: value.1, w: 0, weighted: false }
+    }
+}
+
+impl From<(usize, usize, i64)> for Edge {
+    fn from(value: (usize, usize, i64)) -> Self {
+        Edge { u: value.0, v: value.1, w: value.2, weighted: true }
+    }
+}
+
 impl Into<Edge> for (usize, usize) {
     fn into(self) -> Edge {
         Edge { u: self.0, v: self.1, w: 0, weighted: false }
+    }
+}
+
+impl From<(u64, u64)> for Edge {
+    fn from(value: (u64, u64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+    }
+}
+
+impl From<(u64, u64, i64)> for Edge {
+    fn from(value: (u64, u64, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
     }
 }
 
@@ -58,6 +82,18 @@ impl Into<Edge> for (u64, u64) {
             w: 0,
             weighted: false
         }
+    }
+}
+
+impl From<(u32, u32)> for Edge {
+    fn from(value: (u32, u32)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+    }
+}
+
+impl From<(u32, u32, i64)> for Edge {
+    fn from(value: (u32, u32, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
     }
 }
 
@@ -73,6 +109,18 @@ impl Into<Edge> for (u32, u32) {
     }
 }
 
+impl From<(isize, isize)> for Edge {
+    fn from(value: (isize, isize)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+    }
+}
+
+impl From<(isize, isize, i64)> for Edge {
+    fn from(value: (isize, isize, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+    }
+}
+
 impl Into<Edge> for (isize, isize) {
     fn into(self) -> Edge {
         Edge {
@@ -84,6 +132,18 @@ impl Into<Edge> for (isize, isize) {
     }
 }
 
+impl From<(i64, i64)> for Edge {
+    fn from(value: (i64, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+    }
+}
+
+impl From<(i64, i64, i64)> for Edge {
+    fn from(value: (i64, i64, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+    }
+}
+
 impl Into<Edge> for (i64, i64) {
     fn into(self) -> Edge {
         Edge {
@@ -92,6 +152,18 @@ impl Into<Edge> for (i64, i64) {
             w: 0,
             weighted: false,
         }
+    }
+}
+
+impl From<(i32, i32)> for Edge {
+    fn from(value: (i32, i32)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+    }
+}
+
+impl From<(i32, i32, i64)> for Edge {
+    fn from(value: (i32, i32, i64)) -> Self {
+        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
     }
 }
 

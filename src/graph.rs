@@ -17,11 +17,31 @@ impl Edge {
         }
     }
 
+    pub fn is_weighted(&self) -> bool {
+        self.weighted
+    }
+
+    pub fn weight(&self) -> Option<i64> {
+        if self.weighted {
+            Some(self.w)
+        } else {
+            None
+        }
+    }
+
+    pub fn format_unweighted(&self) -> String {
+        format!("{} {}", self.u, self.v)
+    }
+
+    pub fn format_weighted(&self) -> String {
+        format!("{} {} {}", self.u, self.v, self.w)
+    }
+
     pub fn format_default(&self) -> String {
         if self.weighted {
-            format!("{} {} {}", self.u, self.v, self.w)
+            self.format_weighted()
         } else {
-            format!("{} {}", self.u, self.v)
+            self.format_unweighted()
         }
     }
 }

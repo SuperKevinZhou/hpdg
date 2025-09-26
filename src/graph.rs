@@ -502,6 +502,25 @@ impl Graph {
 
         graph
     }
+
+    pub fn with_nodes<I: IntoIterator<Item = usize>>(nodes: I, directed: bool) -> Graph {
+        let mut graph = Graph {
+            directed,
+            edges: HashMap::new(),
+        };
+        for node in nodes {
+            graph.edges.insert(node, Vec::new());
+        }
+        graph
+    }
+
+    pub fn node_count(&self) -> usize {
+        self.edges.len()
+    }
+
+    pub fn is_directed(&self) -> bool {
+        self.directed
+    }
 }
 
 impl Graph {

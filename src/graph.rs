@@ -530,14 +530,26 @@ impl Graph {
             .filter(|e| { e.v >= e.u || self.directed })
     }
 
+    pub fn iter_edges_all(&self) -> impl Iterator<Item = &Edge> {
+        self.edges.values().flat_map(|v| v.iter())
+    }
+
     pub fn iter_edges_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
         self.edges.values_mut()
             .flat_map(|v| v.iter_mut())
             .filter(|e| { e.v >= e.u || self.directed })
     }
 
+    pub fn iter_edges_all_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
+        self.edges.values_mut().flat_map(|v| v.iter_mut())
+    }
+
     pub fn edge_count(&self) -> usize {
         self.iter_edges().count()
+    }
+
+    pub fn edge_count_all(&self) -> usize {
+        self.iter_edges_all().count()
     }
     
     pub fn add_single_edge(&mut self, u: usize, v: usize, w: Option<i64>) {

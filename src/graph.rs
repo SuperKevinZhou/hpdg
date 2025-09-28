@@ -559,23 +559,22 @@ impl Graph {
             .or_insert(vec![Edge::new(u, v, w)]);
     }
 
-    pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
-        // let w = w.unwrap_or(1);
-        // self.add_single_edge(u, v, w);
+    fn add_directed_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        self.add_single_edge(u, v, w);
+    }
 
-        // if (!self.directed) && u != v {
-        //     self.add_single_edge(v, u, w);
-        // }
-        if let Some(w) = w {
-            self.add_single_edge(u, v, Some(w));
-            if !self.directed && u != v {
-                self.add_single_edge(v, u, Some(w));
-            }
+    fn add_undirected_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        self.add_single_edge(u, v, w);
+        if u != v {
+            self.add_single_edge(v, u, w);
+        }
+    }
+
+    pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        if self.directed {
+            self.add_directed_edge(u, v, w);
         } else {
-            self.add_single_edge(u, v, None);
-            if !self.directed && u != v {
-                self.add_single_edge(v, u, None);
-            }
+            self.add_undirected_edge(u, v, w);
         }
     }
 

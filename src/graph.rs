@@ -578,6 +578,21 @@ impl Graph {
         }
     }
 
+    pub fn add_edges<I, E>(&mut self, edges: I)
+    where
+        I: IntoIterator<Item = E>,
+        E: Into<Edge>,
+    {
+        for edge in edges {
+            let edge: Edge = edge.into();
+            if edge.weighted {
+                self.add_edge(edge.u, edge.v, Some(edge.w));
+            } else {
+                self.add_edge(edge.u, edge.v, None);
+            }
+        }
+    }
+
     pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
         let mut rng = rng();
         let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.to_string()) });

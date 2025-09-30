@@ -593,6 +593,25 @@ impl Graph {
         }
     }
 
+    pub fn add_edge_with_weight<F>(&mut self, u: usize, v: usize, mut weight_gen: F)
+    where
+        F: FnMut() -> i64,
+    {
+        let w = weight_gen();
+        self.add_edge(u, v, Some(w));
+    }
+
+    pub fn add_edges_with_weight<I, F>(&mut self, edges: I, mut weight_gen: F)
+    where
+        I: IntoIterator<Item = (usize, usize)>,
+        F: FnMut() -> i64,
+    {
+        for (u, v) in edges {
+            let w = weight_gen();
+            self.add_edge(u, v, Some(w));
+        }
+    }
+
     pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
         let mut rng = rng();
         let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.to_string()) });

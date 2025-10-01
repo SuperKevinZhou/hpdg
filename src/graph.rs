@@ -614,7 +614,7 @@ impl Graph {
 
     pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
         let mut rng = rng();
-        let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.to_string()) });
+        let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.format_default()) });
         let mut buf: Vec<String> = Vec::new();
         buf.reserve(self.edge_count() * line_reserve.unwrap_or(6));
 
@@ -649,6 +649,13 @@ impl Graph {
             }
         }
         buf.join("\n")
+    }
+
+    pub fn to_string_with<F>(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: F) -> String
+    where
+        F: Fn(&Edge) -> String,
+    {
+        self.to_string(shuffle, line_reserve, Some(Box::new(edge_display_function)))
     }
 }
 

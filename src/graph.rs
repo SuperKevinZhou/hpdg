@@ -657,6 +657,36 @@ impl Graph {
     {
         self.to_string(shuffle, line_reserve, Some(Box::new(edge_display_function)))
     }
+
+    pub fn shuffle_edges(&mut self) {
+        let mut rng = rng();
+        for edges in self.edges.values_mut() {
+            edges.shuffle(&mut rng);
+        }
+    }
+
+    pub fn shuffle_labels(&self) -> Graph {
+        let mut rng = rng();
+        let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        let mut new_nodes = nodes.clone();
+        new_nodes.shuffle(&mut rng);
+
+        let mapping: HashMap<usize, usize> = nodes
+            .iter()
+            .zip(new_nodes.iter())
+            .map(|(&old, &new)| (old, new))
+            .collect();
+
+        let mut graph = Graph::with_nodes(new_nodes, self.directed);
+        for edge in self.iter_edges_all() {
+            let u = mapping[&edge.u];
+            let v = mapping[&edge.v];
+            let w = if edge.weighted { Some(edge.w) } else { None };
+            graph.add_single_edge(u, v, w);
+        }
+
+        graph
+    }
 }
 
 impl fmt::Display for Graph {

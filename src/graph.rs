@@ -1,6 +1,7 @@
 use std::{collections::{hash_map::Entry, HashMap}, fmt};
 use rand::{distr::{weighted::WeightedIndex, Distribution}, rng, rngs::ThreadRng, seq::SliceRandom, Rng};
 
+#[derive(Clone, Debug)]
 pub struct Edge {
     u: usize,
     v: usize,
@@ -686,6 +687,21 @@ impl Graph {
         }
 
         graph
+    }
+
+    pub fn edges_random_oriented(&self) -> Vec<Edge> {
+        let mut rng = rng();
+        let mut edges: Vec<Edge> = self.iter_edges().cloned().collect();
+        if !self.directed {
+            for edge in edges.iter_mut() {
+                if rng.random_bool(0.5) {
+                    let tmp = edge.u;
+                    edge.u = edge.v;
+                    edge.v = tmp;
+                }
+            }
+        }
+        edges
     }
 }
 

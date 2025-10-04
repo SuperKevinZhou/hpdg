@@ -490,6 +490,16 @@ pub struct Graph {
     edges: HashMap<usize, Vec<Edge>>,
 }
 
+#[derive(Debug, Clone)]
+pub struct GraphStats {
+    pub node_count: usize,
+    pub edge_count: usize,
+    pub directed: bool,
+    pub min_degree: usize,
+    pub max_degree: usize,
+    pub avg_degree: f64,
+}
+
 impl Graph {
     pub fn new(point_count: usize, directed: bool) -> Graph {
         let mut graph = Graph {
@@ -521,6 +531,50 @@ impl Graph {
 
     pub fn is_directed(&self) -> bool {
         self.directed
+    }
+
+    pub fn is_valid(&self) -> bool {
+        let nodes: std::collections::HashSet<usize> = self.edges.keys().cloned().collect();
+        for edge in self.iter_edges_all() {
+            if !nodes.contains(&edge.u) || !nodes.contains(&edge.v) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn stats(&self) -> GraphStats {
+        let node_count = self.node_count();
+        let edge_count = self.edge_count();
+        let mut min_degree = usize::MAX;
+        let mut max_degree = 0usize;
+        let mut total_degree = 0usize;
+
+        for (_node, edges) in &self.edges {
+            let degree = edges.len();
+            min_degree = min_degree.min(degree);
+            max_degree = max_degree.max(degree);
+            total_degree += degree;
+        }
+
+        if node_count == 0 {
+            min_degree = 0;
+        }
+
+        let avg_degree = if node_count == 0 {
+            0.0
+        } else {
+            total_degree as f64 / node_count as f64
+        };
+
+        GraphStats {
+            node_count,
+            edge_count,
+            directed: self.directed,
+            min_degree,
+            max_degree,
+            avg_degree,
+        }
     }
 }
 

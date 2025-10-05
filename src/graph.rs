@@ -576,6 +576,28 @@ impl Graph {
             avg_degree,
         }
     }
+
+    pub fn to_adj_list_string(&self, sep: &str) -> String {
+        let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        nodes.sort_unstable();
+        let mut lines = Vec::with_capacity(nodes.len());
+
+        for node in nodes {
+            let mut items = Vec::new();
+            if let Some(edges) = self.edges.get(&node) {
+                for edge in edges {
+                    if edge.weighted {
+                        items.push(format!("{}:{}", edge.v, edge.w));
+                    } else {
+                        items.push(edge.v.to_string());
+                    }
+                }
+            }
+            lines.push(format!("{}: {}", node, items.join(sep)));
+        }
+
+        lines.join("\n")
+    }
 }
 
 impl Graph {

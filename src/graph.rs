@@ -598,6 +598,26 @@ impl Graph {
 
         lines.join("\n")
     }
+
+    pub fn to_matrix(&self, default: i64) -> (Vec<usize>, Vec<Vec<i64>>) {
+        let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        nodes.sort_unstable();
+        let n = nodes.len();
+        let mut index = HashMap::new();
+        for (i, node) in nodes.iter().enumerate() {
+            index.insert(*node, i);
+        }
+
+        let mut matrix = vec![vec![default; n]; n];
+        for edge in self.iter_edges_all() {
+            if let (Some(&i), Some(&j)) = (index.get(&edge.u), index.get(&edge.v)) {
+                let value = if edge.weighted { edge.w } else { 1 };
+                matrix[i][j] = value;
+            }
+        }
+
+        (nodes, matrix)
+    }
 }
 
 impl Graph {

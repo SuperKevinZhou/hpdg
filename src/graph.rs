@@ -199,6 +199,7 @@ impl Into<Edge> for (i32, i32) {
     }
 }
 
+/// A switchable multigraph to perform edge-switch operations.
 pub struct SwitchGraph {
     directed: bool,
     edges: HashMap<(usize, usize), usize>,
@@ -512,6 +513,10 @@ impl Graph {
         }
 
         graph
+    }
+
+    pub fn is_directed(&self) -> bool {
+        self.directed
     }
 
     pub fn with_nodes<I: IntoIterator<Item = usize>>(nodes: I, directed: bool) -> Graph {

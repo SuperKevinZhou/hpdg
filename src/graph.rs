@@ -274,11 +274,22 @@ impl SwitchGraph {
             .map(|dist| dist.sample(&mut rng))
             .unwrap_or(0);
         let &(mut e1, _) = &normalized_edges[first_index];
-        
-        let second_index = WeightedIndex::new(&weights)
-            .ok()
-            .map(|dist| dist.sample(&mut rng))
-            .unwrap_or(0);
+
+        let mut second_index = first_index;
+        if normalized_edges.len() > 1 {
+            for _ in 0..5 {
+                second_index = WeightedIndex::new(&weights)
+                    .ok()
+                    .map(|dist| dist.sample(&mut rng))
+                    .unwrap_or(first_index);
+                if second_index != first_index {
+                    break;
+                }
+            }
+            if second_index == first_index {
+                second_index = (first_index + 1) % normalized_edges.len();
+            }
+        }
         let &(mut e2, _) = &normalized_edges[second_index];
 
         if !self.directed {
@@ -302,8 +313,9 @@ impl SwitchGraph {
         }
 
         if !repeated_edges
-            && (self.edges.contains_key(&(x1, y2))) || self.edges.contains_key(&(x2, y1)) {
-                return false;
+            && (self.edges.contains_key(&(x1, y2)) || self.edges.contains_key(&(x2, y1)))
+        {
+            return false;
         }
 
         self.remove(x1, y1);

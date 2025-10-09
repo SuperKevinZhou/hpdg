@@ -496,6 +496,18 @@ impl SwitchGraph {
             .iter()
             .flat_map(|(&(u, v), &count)| std::iter::repeat_n((u, v), count))
     }
+
+    pub fn iter_edges_unique(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.edges.keys().cloned()
+    }
+
+    pub fn edge_count(&self) -> usize {
+        self.edges.values().sum()
+    }
+
+    pub fn edge_count_unique(&self) -> usize {
+        self.edges.len()
+    }
 }
 
 pub struct Graph {

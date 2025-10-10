@@ -421,6 +421,12 @@ impl SwitchGraph {
         Ok(graph)
     }
 
+    pub fn from_directed_degree_sequence_simple(
+        degree_sequence: &[(usize, usize)],
+    ) -> Result<Self, &'static str> {
+        Self::from_directed_degree_sequence(degree_sequence, false, false)
+    }
+
     pub fn from_undirected_degree_sequence(
         degree_sequence: &[usize],
         self_loop: bool,

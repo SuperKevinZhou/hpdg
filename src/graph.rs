@@ -497,6 +497,12 @@ impl SwitchGraph {
         Ok(SwitchGraph::new(edges, false))
     }
 
+    pub fn from_undirected_degree_sequence_simple(
+        degree_sequence: &[usize],
+    ) -> Result<Self, &'static str> {
+        Self::from_undirected_degree_sequence(degree_sequence, false, false)
+    }
+
     pub fn iter_edges(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         self.edges
             .iter()

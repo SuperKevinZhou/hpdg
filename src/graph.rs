@@ -344,20 +344,7 @@ impl SwitchGraph {
         self_loop: bool,
         repeated_edges: bool,
     ) -> Result<Self, &'static str> {
-        if degree_sequence.iter().any(|&(out, in_)| out == 0 && in_ > 0) {
-            return Err("Degree sequence is not graphical: some vertices have zero out-degree but positive in-degree");
-        }
-        
-        if degree_sequence.iter().any(|&(out, in_)| in_ == 0 && out > 0) {
-            return Err("Degree sequence is not graphical: some vertices have zero in-degree but positive out-degree");
-        }
-        
-        let total_out: usize = degree_sequence.iter().map(|&(out, _)| out).sum();
-        let total_in: usize = degree_sequence.iter().map(|&(_, in_)| in_).sum();
-        
-        if total_out != total_in {
-            return Err("Degree sequence is not graphical: total out-degree != total in-degree");
-        }
+        Self::validate_directed_degree_sequence(degree_sequence)?;
         
         if degree_sequence.is_empty() {
             return Ok(SwitchGraph::new(Vec::<(usize, usize)>::new(), true));
@@ -432,10 +419,7 @@ impl SwitchGraph {
         self_loop: bool,
         repeated_edges: bool,
     ) -> Result<Self, &'static str> {
-        let total_degree: usize = degree_sequence.iter().sum();
-        if total_degree % 2 != 0 {
-            return Err("Degree sequence is not graphical: total degree must be even");
-        }
+        Self::validate_undirected_degree_sequence(degree_sequence)?;
         
         if degree_sequence.is_empty() {
             return Ok(SwitchGraph::new(Vec::<(usize, usize)>::new(), false));
@@ -495,6 +479,36 @@ impl SwitchGraph {
         }
 
         Ok(SwitchGraph::new(edges, false))
+    }
+
+    pub fn validate_directed_degree_sequence(
+        degree_sequence: &[(usize, usize)],
+    ) -> Result<(), &'static str> {
+        if degree_sequence.iter().any(|&(out, in_)| out == 0 && in_ > 0) {
+            return Err("Degree sequence is not graphical: some vertices have zero out-degree but positive in-degree");
+        }
+
+        if degree_sequence.iter().any(|&(out, in_)| in_ == 0 && out > 0) {
+            return Err("Degree sequence is not graphical: some vertices have zero in-degree but positive out-degree");
+        }
+
+        let total_out: usize = degree_sequence.iter().map(|&(out, _)| out).sum();
+        let total_in: usize = degree_sequence.iter().map(|&(_, in_)| in_).sum();
+
+        if total_out != total_in {
+            return Err("Degree sequence is not graphical: total out-degree != total in-degree");
+        }
+        Ok(())
+    }
+
+    pub fn validate_undirected_degree_sequence(
+        degree_sequence: &[usize],
+    ) -> Result<(), &'static str> {
+        let total_degree: usize = degree_sequence.iter().sum();
+        if total_degree % 2 != 0 {
+            return Err("Degree sequence is not graphical: total degree must be even");
+        }
+        Ok(())
     }
 
     pub fn from_undirected_degree_sequence_simple(

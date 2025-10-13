@@ -764,6 +764,29 @@ impl Graph {
         }
     }
 
+    pub fn chain(
+        point_count: usize,
+        weight_limit: Option<(i64, i64)>,
+        directed: bool,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        let mut rng = rng();
+        let is_unweighted = weight_limit.is_none();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.unwrap();
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut graph = Graph::new(point_count, directed);
+        for i in 2..=point_count {
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(i - 1, i, weight);
+        }
+        graph
+    }
+
     pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
         let mut rng = rng();
         let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.format_default()) });

@@ -943,7 +943,7 @@ impl Graph {
         
         let mut rng = rng();
         let is_unweighted = weight_limit.is_none();
-        
+        let use_custom_weight_gen = weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
             let (min_weight, max_weight) = weight_limit.unwrap();
             rng.random_range(min_weight..=max_weight)
@@ -964,18 +964,37 @@ impl Graph {
         let flower_count = ((total_edges as f64) * flower).round() as usize;
         
         let mut graph = Graph::new(point_count, directed);
-        
+
         let chain_end = chain_count + 1;
-        for i in 2..=chain_end {
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
-            graph.add_edge(i - 1, i, weight);
-        }
-        
         let flower_start = chain_end + 1;
         let flower_end = (flower_start + flower_count).min(point_count + 1);
-        for i in flower_start..flower_end {
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
-            graph.add_edge(1, i, weight);
+
+        if !use_custom_weight_gen {
+            let chain_graph = Graph::chain(chain_end, weight_limit, directed, None);
+            graph.add_edges(chain_graph.iter_edges_all().cloned());
+
+            if flower_count > 0 {
+                let flower_graph = Graph::flower(flower_count + 1, weight_limit, directed, None);
+                let offset = chain_end.saturating_sub(1);
+                for edge in flower_graph.iter_edges_all() {
+                    let mut u = edge.u;
+                    let mut v = edge.v;
+                    if u != 1 { u += offset; }
+                    if v != 1 { v += offset; }
+                    let weight = if edge.weighted { Some(edge.w) } else { None };
+                    graph.add_edge(u, v, weight);
+                }
+            }
+        } else {
+            for i in 2..=chain_end {
+                let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+                graph.add_edge(i - 1, i, weight);
+            }
+
+            for i in flower_start..flower_end {
+                let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+                graph.add_edge(1, i, weight);
+            }
         }
         
         let random_start = flower_end;

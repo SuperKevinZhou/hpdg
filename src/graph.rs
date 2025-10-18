@@ -1196,4 +1196,55 @@ impl Graph {
 
         graph
     }
+
+    pub fn graph(
+        point_count: usize,
+        edge_count: usize,
+        directed: bool,
+        self_loop: bool,
+        repeated_edges: bool,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        let mut rng = rng();
+        let is_unweighted = weight_limit.is_none();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.unwrap();
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut graph = Graph::new(point_count, directed);
+        let mut used: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+        let mut count = 0usize;
+
+        while count < edge_count {
+            let mut u = rng.random_range(1..=point_count);
+            let mut v = rng.random_range(1..=point_count);
+            if !self_loop && u == v {
+                continue;
+            }
+
+            let key = if directed {
+                (u, v)
+            } else {
+                if u > v {
+                    std::mem::swap(&mut u, &mut v);
+                }
+                (u, v)
+            };
+
+            if !repeated_edges && used.contains(&key) {
+                continue;
+            }
+
+            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            graph.add_edge(u, v, weight);
+            used.insert(key);
+            count += 1;
+        }
+
+        graph
+    }
 }

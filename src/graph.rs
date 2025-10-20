@@ -551,6 +551,23 @@ pub struct GraphStats {
     pub avg_degree: f64,
 }
 
+#[derive(Debug, Clone)]
+pub struct GraphGenOptions {
+    pub directed: bool,
+    pub self_loop: bool,
+    pub repeated_edges: bool,
+}
+
+impl Default for GraphGenOptions {
+    fn default() -> Self {
+        Self {
+            directed: false,
+            self_loop: false,
+            repeated_edges: false,
+        }
+    }
+}
+
 impl Graph {
     pub fn new(point_count: usize, directed: bool) -> Graph {
         let mut graph = Graph {
@@ -1246,5 +1263,23 @@ impl Graph {
         }
 
         graph
+    }
+
+    pub fn graph_with_options(
+        point_count: usize,
+        edge_count: usize,
+        options: GraphGenOptions,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        Graph::graph(
+            point_count,
+            edge_count,
+            options.directed,
+            options.self_loop,
+            options.repeated_edges,
+            weight_limit,
+            weight_gen,
+        )
     }
 }

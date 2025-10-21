@@ -1225,9 +1225,9 @@ impl Graph {
     ) -> Graph {
         assert!(point_count > 0, "point_count must be above zero");
         let mut rng = rng();
-        let is_unweighted = weight_limit.is_none();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.unwrap();
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1256,7 +1256,7 @@ impl Graph {
                 continue;
             }
 
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
             graph.add_edge(u, v, weight);
             used.insert(key);
             count += 1;
@@ -1281,5 +1281,14 @@ impl Graph {
             weight_limit,
             weight_gen,
         )
+    }
+
+    pub fn graph_with_weight_limit(
+        point_count: usize,
+        edge_count: usize,
+        options: GraphGenOptions,
+        weight_limit: (i64, i64),
+    ) -> Graph {
+        Graph::graph_with_options(point_count, edge_count, options, Some(weight_limit), None)
     }
 }

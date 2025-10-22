@@ -1291,4 +1291,16 @@ impl Graph {
     ) -> Graph {
         Graph::graph_with_options(point_count, edge_count, options, Some(weight_limit), None)
     }
+
+    pub fn simple_graph(point_count: usize, edge_count: usize, directed: bool) -> Graph {
+        Graph::graph(
+            point_count,
+            edge_count,
+            directed,
+            false,
+            false,
+            None,
+            None,
+        )
+    }
 }

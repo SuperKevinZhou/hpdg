@@ -1303,4 +1303,21 @@ impl Graph {
             None,
         )
     }
+
+    pub fn multigraph(
+        point_count: usize,
+        edge_count: usize,
+        directed: bool,
+        self_loop: bool,
+    ) -> Graph {
+        Graph::graph(
+            point_count,
+            edge_count,
+            directed,
+            self_loop,
+            true,
+            None,
+            None,
+        )
+    }
 }

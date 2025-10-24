@@ -1320,4 +1320,73 @@ impl Graph {
             None,
         )
     }
+
+    pub fn complete_graph(
+        point_count: usize,
+        directed: bool,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut graph = Graph::new(point_count, directed);
+        for u in 1..=point_count {
+            let start = if directed { 1 } else { u + 1 };
+            for v in start..=point_count {
+                if u == v {
+                    continue;
+                }
+                let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                graph.add_edge(u, v, weight);
+            }
+        }
+        graph
+    }
+
+    pub fn complete_bipartite(
+        left_count: usize,
+        right_count: usize,
+        directed: bool,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(left_count > 0 && right_count > 0, "partition sizes must be above zero");
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let total = left_count + right_count;
+        let mut graph = Graph::new(total, directed);
+        let left_nodes: Vec<usize> = (1..=left_count).collect();
+        let right_nodes: Vec<usize> = ((left_count + 1)..=total).collect();
+
+        for &u in &left_nodes {
+            for &v in &right_nodes {
+                let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                graph.add_edge(u, v, weight);
+            }
+        }
+
+        if directed {
+            for &u in &right_nodes {
+                for &v in &left_nodes {
+                    let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                    graph.add_edge(u, v, weight);
+                }
+            }
+        }
+
+        graph
+    }
 }

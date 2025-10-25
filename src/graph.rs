@@ -1389,4 +1389,50 @@ impl Graph {
 
         graph
     }
+
+    pub fn k_regular_approx(
+        point_count: usize,
+        k: usize,
+        directed: bool,
+        self_loop: bool,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        let mut rng = rng();
+        let mut graph = Graph::new(point_count, directed);
+
+        if directed {
+            for u in 1..=point_count {
+                for _ in 0..k {
+                    let v = rng.random_range(1..=point_count);
+                    if !self_loop && u == v {
+                        continue;
+                    }
+                    graph.add_edge(u, v, None);
+                }
+            }
+            return graph;
+        }
+
+        let mut stubs = Vec::with_capacity(point_count.saturating_mul(k));
+        for u in 1..=point_count {
+            for _ in 0..k {
+                stubs.push(u);
+            }
+        }
+        stubs.shuffle(&mut rng);
+
+        for pair in stubs.chunks(2) {
+            if pair.len() < 2 {
+                break;
+            }
+            let u = pair[0];
+            let v = pair[1];
+            if !self_loop && u == v {
+                continue;
+            }
+            graph.add_edge(u, v, None);
+        }
+
+        graph
+    }
 }

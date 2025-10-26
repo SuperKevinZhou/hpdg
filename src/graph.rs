@@ -1435,4 +1435,42 @@ impl Graph {
 
         graph
     }
+
+    pub fn dag(
+        point_count: usize,
+        edge_count: usize,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut graph = Graph::new(point_count, true);
+        let mut used: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+        let mut count = 0usize;
+
+        while count < edge_count {
+            let u = rng.random_range(1..=point_count);
+            let v = rng.random_range(1..=point_count);
+            if u == v {
+                continue;
+            }
+            let (from, to) = if u < v { (u, v) } else { (v, u) };
+            if used.contains(&(from, to)) {
+                continue;
+            }
+            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            graph.add_edge(from, to, weight);
+            used.insert((from, to));
+            count += 1;
+        }
+
+        graph
+    }
 }

@@ -1442,7 +1442,18 @@ impl Graph {
         weight_limit: Option<(i64, i64)>,
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
+        Self::dag_with_options(point_count, edge_count, false, weight_limit, weight_gen)
+    }
+
+    pub fn dag_with_options(
+        point_count: usize,
+        edge_count: usize,
+        self_loop: bool,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
         assert!(point_count > 0, "point_count must be above zero");
+        assert!(!self_loop, "DAG does not allow self loops");
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {

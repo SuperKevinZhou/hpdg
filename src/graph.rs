@@ -1484,4 +1484,60 @@ impl Graph {
 
         graph
     }
+
+    pub fn udag(
+        point_count: usize,
+        edge_count: usize,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        assert!(
+            edge_count <= point_count.saturating_sub(1),
+            "edge_count must be <= point_count - 1 for UDAG"
+        );
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut parent: Vec<usize> = (0..=point_count).collect();
+        fn find(parent: &mut [usize], x: usize) -> usize {
+            if parent[x] != x {
+                parent[x] = find(parent, parent[x]);
+            }
+            parent[x]
+        }
+        fn union(parent: &mut [usize], a: usize, b: usize) {
+            let ra = find(parent, a);
+            let rb = find(parent, b);
+            if ra != rb {
+                parent[rb] = ra;
+            }
+        }
+
+        let mut graph = Graph::new(point_count, false);
+        let mut count = 0usize;
+        while count < edge_count {
+            let u = rng.random_range(1..=point_count);
+            let v = rng.random_range(1..=point_count);
+            if u == v {
+                continue;
+            }
+            let ru = find(&mut parent, u);
+            let rv = find(&mut parent, v);
+            if ru == rv {
+                continue;
+            }
+            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            graph.add_edge(u, v, weight);
+            union(&mut parent, u, v);
+            count += 1;
+        }
+
+        graph
+    }
 }

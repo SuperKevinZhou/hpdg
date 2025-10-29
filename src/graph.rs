@@ -1540,4 +1540,63 @@ impl Graph {
 
         graph
     }
+
+    pub fn connected(
+        point_count: usize,
+        edge_count: usize,
+        directed: bool,
+        weight_limit: Option<(i64, i64)>,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        assert!(
+            edge_count >= point_count.saturating_sub(1),
+            "edge_count must be >= point_count - 1 for connected graph"
+        );
+
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut graph = Graph::tree(point_count, 0.0, 0.0, weight_limit, directed, None, None);
+        let mut used: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+        for edge in graph.iter_edges() {
+            let mut u = edge.u;
+            let mut v = edge.v;
+            if !directed && u > v {
+                std::mem::swap(&mut u, &mut v);
+            }
+            used.insert((u, v));
+        }
+
+        let mut count = graph.edge_count();
+        while count < edge_count {
+            let mut u = rng.random_range(1..=point_count);
+            let mut v = rng.random_range(1..=point_count);
+            if u == v {
+                continue;
+            }
+            let key = if directed {
+                (u, v)
+            } else {
+                if u > v {
+                    std::mem::swap(&mut u, &mut v);
+                }
+                (u, v)
+            };
+            if used.contains(&key) {
+                continue;
+            }
+            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            graph.add_edge(u, v, weight);
+            used.insert(key);
+            count += 1;
+        }
+
+        graph
+    }
 }

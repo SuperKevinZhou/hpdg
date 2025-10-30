@@ -1599,4 +1599,70 @@ impl Graph {
 
         graph
     }
+
+    pub fn ensure_connected(&mut self) {
+        let mut parent: HashMap<usize, usize> = self.edges.keys().map(|&k| (k, k)).collect();
+
+        fn find(parent: &mut HashMap<usize, usize>, x: usize) -> usize {
+            let p = *parent.get(&x).unwrap();
+            if p != x {
+                let root = find(parent, p);
+                parent.insert(x, root);
+            }
+            *parent.get(&x).unwrap()
+        }
+
+        fn union(parent: &mut HashMap<usize, usize>, a: usize, b: usize) {
+            let ra = find(parent, a);
+            let rb = find(parent, b);
+            if ra != rb {
+                parent.insert(rb, ra);
+            }
+        }
+
+        for edge in self.iter_edges() {
+            union(&mut parent, edge.u, edge.v);
+        }
+
+        let mut components: HashMap<usize, Vec<usize>> = HashMap::new();
+        for &node in self.edges.keys() {
+            let root = find(&mut parent, node);
+            components.entry(root).or_default().push(node);
+        }
+
+        let mut reps: Vec<usize> = components.values().map(|v| v[0]).collect();
+        if reps.len() <= 1 {
+            return;
+        }
+        let mut rng = rng();
+        reps.shuffle(&mut rng);
+        for pair in reps.windows(2) {
+            let u = pair[0];
+            let v = pair[1];
+            self.add_edge(u, v, None);
+        }
+    }
+
+    pub fn make_k_connected(&mut self, k: usize) {
+        if k == 0 {
+            return;
+        }
+        self.ensure_connected();
+        if k == 1 {
+            return;
+        }
+        let mut rng = rng();
+        let nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        for _ in 0..(k - 1) * nodes.len().saturating_sub(1) {
+            if nodes.len() < 2 {
+                break;
+            }
+            let u = nodes[rng.random_range(0..nodes.len())];
+            let v = nodes[rng.random_range(0..nodes.len())];
+            if u == v {
+                continue;
+            }
+            self.add_edge(u, v, None);
+        }
+    }
 }

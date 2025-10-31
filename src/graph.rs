@@ -1665,4 +1665,59 @@ impl Graph {
             self.add_edge(u, v, None);
         }
     }
+
+    pub fn forest(
+        point_count: usize,
+        tree_count: usize,
+        weight_limit: Option<(i64, i64)>,
+        directed: bool,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        assert!(tree_count >= 1 && tree_count <= point_count, "invalid tree_count");
+
+        let mut rng = rng();
+        let use_weight = weight_limit.is_some() || weight_gen.is_some();
+        let default_weight_gen = |rng: &mut ThreadRng| {
+            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            rng.random_range(min_weight..=max_weight)
+        };
+        let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
+
+        let mut parent: Vec<usize> = (0..=point_count).collect();
+        fn find(parent: &mut [usize], x: usize) -> usize {
+            if parent[x] != x {
+                parent[x] = find(parent, parent[x]);
+            }
+            parent[x]
+        }
+        fn union(parent: &mut [usize], a: usize, b: usize) {
+            let ra = find(parent, a);
+            let rb = find(parent, b);
+            if ra != rb {
+                parent[rb] = ra;
+            }
+        }
+
+        let mut graph = Graph::new(point_count, directed);
+        let mut components = point_count;
+        while components > tree_count {
+            let u = rng.random_range(1..=point_count);
+            let v = rng.random_range(1..=point_count);
+            if u == v {
+                continue;
+            }
+            let ru = find(&mut parent, u);
+            let rv = find(&mut parent, v);
+            if ru == rv {
+                continue;
+            }
+            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            graph.add_edge(u, v, weight);
+            union(&mut parent, u, v);
+            components -= 1;
+        }
+
+        graph
+    }
 }

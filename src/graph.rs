@@ -1720,4 +1720,32 @@ impl Graph {
 
         graph
     }
+
+    pub fn forest_with_repeats(
+        point_count: usize,
+        tree_count: usize,
+        weight_limit: Option<(i64, i64)>,
+        directed: bool,
+        weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
+        repeat_times: usize,
+    ) -> Graph {
+        let mut graph = Graph::forest(point_count, tree_count, weight_limit, directed, weight_gen);
+        if repeat_times == 0 {
+            return graph;
+        }
+
+        let mut rng = rng();
+        let edges: Vec<Edge> = graph.iter_edges().cloned().collect();
+        if edges.is_empty() {
+            return graph;
+        }
+
+        for _ in 0..repeat_times {
+            let edge = edges[rng.random_range(0..edges.len())].clone();
+            let weight = if edge.weighted { Some(edge.w) } else { None };
+            graph.add_edge(edge.u, edge.v, weight);
+        }
+
+        graph
+    }
 }

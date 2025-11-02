@@ -1748,4 +1748,38 @@ impl Graph {
 
         graph
     }
+
+    pub fn from_directed_degree_sequence(
+        degree_sequence: &[(usize, usize)],
+        self_loop: bool,
+        repeated_edges: bool,
+    ) -> Result<Graph, &'static str> {
+        let switch = SwitchGraph::from_directed_degree_sequence(
+            degree_sequence,
+            self_loop,
+            repeated_edges,
+        )?;
+        let mut graph = Graph::new(degree_sequence.len(), true);
+        for (u, v) in switch.iter_edges() {
+            graph.add_edge(u, v, None);
+        }
+        Ok(graph)
+    }
+
+    pub fn from_undirected_degree_sequence(
+        degree_sequence: &[usize],
+        self_loop: bool,
+        repeated_edges: bool,
+    ) -> Result<Graph, &'static str> {
+        let switch = SwitchGraph::from_undirected_degree_sequence(
+            degree_sequence,
+            self_loop,
+            repeated_edges,
+        )?;
+        let mut graph = Graph::new(degree_sequence.len(), false);
+        for (u, v) in switch.iter_edges() {
+            graph.add_edge(u, v, None);
+        }
+        Ok(graph)
+    }
 }

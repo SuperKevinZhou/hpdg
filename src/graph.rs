@@ -568,6 +568,11 @@ impl Default for GraphGenOptions {
     }
 }
 
+pub enum DegreeSequence<'a> {
+    Directed(&'a [(usize, usize)]),
+    Undirected(&'a [usize]),
+}
+
 impl Graph {
     pub fn new(point_count: usize, directed: bool) -> Graph {
         let mut graph = Graph {
@@ -1781,5 +1786,20 @@ impl Graph {
             graph.add_edge(u, v, None);
         }
         Ok(graph)
+    }
+
+    pub fn from_degree_sequence(
+        degree_sequence: DegreeSequence<'_>,
+        self_loop: bool,
+        repeated_edges: bool,
+    ) -> Result<Graph, &'static str> {
+        match degree_sequence {
+            DegreeSequence::Directed(seq) => {
+                Graph::from_directed_degree_sequence(seq, self_loop, repeated_edges)
+            }
+            DegreeSequence::Undirected(seq) => {
+                Graph::from_undirected_degree_sequence(seq, self_loop, repeated_edges)
+            }
+        }
     }
 }

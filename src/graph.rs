@@ -1802,4 +1802,18 @@ impl Graph {
             }
         }
     }
+
+    pub fn max_edge_count(point_count: usize, directed: bool, self_loop: bool) -> usize {
+        if directed {
+            if self_loop {
+                point_count * point_count
+            } else {
+                point_count.saturating_mul(point_count.saturating_sub(1))
+            }
+        } else if self_loop {
+            point_count.saturating_mul(point_count.saturating_add(1)) / 2
+        } else {
+            point_count.saturating_mul(point_count.saturating_sub(1)) / 2
+        }
+    }
 }

@@ -1816,4 +1816,23 @@ impl Graph {
             point_count.saturating_mul(point_count.saturating_sub(1)) / 2
         }
     }
+
+    pub fn estimate_comb(n: usize, k: usize) -> f64 {
+        if k > n {
+            return 0.0;
+        }
+        if k == 0 || k == n {
+            return 1.0;
+        }
+        let k = k.min(n - k);
+        let mut res = 1.0f64;
+        for i in 1..=k {
+            res *= (n + 1 - i) as f64 / i as f64;
+        }
+        res
+    }
+
+    pub fn estimate_upperbound(point_count: usize, directed: bool, self_loop: bool) -> f64 {
+        Graph::max_edge_count(point_count, directed, self_loop) as f64
+    }
 }

@@ -1835,4 +1835,19 @@ impl Graph {
     pub fn estimate_upperbound(point_count: usize, directed: bool, self_loop: bool) -> f64 {
         Graph::max_edge_count(point_count, directed, self_loop) as f64
     }
+
+    pub fn hack_spfa(point_count: usize, weight_limit: Option<(i64, i64)>) -> Graph {
+        assert!(point_count > 1, "point_count must be above one");
+        let mut graph = Graph::new(point_count, true);
+        let (min_w, max_w) = weight_limit.unwrap_or((-1, 1));
+
+        for i in 1..point_count {
+            let forward_w = 0.clamp(min_w, max_w);
+            let backward_w = (-1).clamp(min_w, max_w);
+            graph.add_edge(i, i + 1, Some(forward_w));
+            graph.add_edge(i + 1, i, Some(backward_w));
+        }
+
+        graph
+    }
 }

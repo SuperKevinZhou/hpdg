@@ -1850,4 +1850,27 @@ impl Graph {
 
         graph
     }
+
+    pub fn hack_spfa_with_options(
+        point_count: usize,
+        forward_weight: i64,
+        backward_weight: i64,
+        extra_edges: usize,
+    ) -> Graph {
+        assert!(point_count > 1, "point_count must be above one");
+        let mut rng = rng();
+        let mut graph = Graph::new(point_count, true);
+
+        for i in 1..point_count {
+            graph.add_edge(i, i + 1, Some(forward_weight));
+            graph.add_edge(i + 1, i, Some(backward_weight));
+        }
+
+        for _ in 0..extra_edges {
+            let v = rng.random_range(2..=point_count);
+            graph.add_edge(1, v, Some(forward_weight));
+        }
+
+        graph
+    }
 }

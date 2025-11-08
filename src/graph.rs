@@ -1874,3 +1874,15 @@ impl Graph {
         graph
     }
 }
+
+pub struct GraphMatrix<T> {
+    matrix: Vec<Vec<T>>,
+    default: T,
+}
+
+impl<T: Clone> GraphMatrix<T> {
+    pub fn new(n: usize, default: T) -> Self {
+        let matrix = vec![vec![default.clone(); n]; n];
+        Self { matrix, default }
+    }
+}

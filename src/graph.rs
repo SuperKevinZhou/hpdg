@@ -1885,4 +1885,20 @@ impl<T: Clone> GraphMatrix<T> {
         let matrix = vec![vec![default.clone(); n]; n];
         Self { matrix, default }
     }
+
+    pub fn size(&self) -> usize {
+        self.matrix.len()
+    }
+
+    pub fn default_value(&self) -> &T {
+        &self.default
+    }
+
+    pub fn get(&self, u: usize, v: usize) -> &T {
+        &self.matrix[u][v]
+    }
+
+    pub fn set(&mut self, u: usize, v: usize, value: T) {
+        self.matrix[u][v] = value;
+    }
 }

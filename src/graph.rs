@@ -1902,3 +1902,20 @@ impl<T: Clone> GraphMatrix<T> {
         self.matrix[u][v] = value;
     }
 }
+
+impl<T: std::fmt::Display> std::fmt::Display for GraphMatrix<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, row) in self.matrix.iter().enumerate() {
+            for (j, item) in row.iter().enumerate() {
+                if j > 0 {
+                    write!(f, " ")?;
+                }
+                write!(f, "{}", item)?;
+            }
+            if i + 1 < self.matrix.len() {
+                writeln!(f)?;
+            }
+        }
+        Ok(())
+    }
+}

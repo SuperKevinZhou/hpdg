@@ -1901,6 +1901,28 @@ impl<T: Clone> GraphMatrix<T> {
     pub fn set(&mut self, u: usize, v: usize, value: T) {
         self.matrix[u][v] = value;
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &[T]> {
+        self.matrix.iter().map(|row| row.as_slice())
+    }
+
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut [T]> {
+        self.matrix.iter_mut().map(|row| row.as_mut_slice())
+    }
+}
+
+impl<T> std::ops::Index<(usize, usize)> for GraphMatrix<T> {
+    type Output = T;
+
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.matrix[index.0][index.1]
+    }
+}
+
+impl<T> std::ops::IndexMut<(usize, usize)> for GraphMatrix<T> {
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        &mut self.matrix[index.0][index.1]
+    }
 }
 
 impl<T: std::fmt::Display> std::fmt::Display for GraphMatrix<T> {

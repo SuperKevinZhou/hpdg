@@ -1925,6 +1925,35 @@ impl<T> std::ops::IndexMut<(usize, usize)> for GraphMatrix<T> {
     }
 }
 
+pub struct Merger {
+    directed: bool,
+    graphs: Vec<Graph>,
+}
+
+impl Merger {
+    pub fn new<I: IntoIterator<Item = Graph>>(graphs: I, directed: bool) -> Self {
+        Self {
+            directed,
+            graphs: graphs.into_iter().collect(),
+        }
+    }
+
+    pub fn to_graph(&self) -> Graph {
+        let mut max_node = 0usize;
+        for graph in &self.graphs {
+            max_node = max_node.max(graph.node_count());
+        }
+        let mut merged = Graph::new(max_node, self.directed);
+        for graph in &self.graphs {
+            for edge in graph.iter_edges_all() {
+                let weight = if edge.weighted { Some(edge.w) } else { None };
+                merged.add_edge(edge.u, edge.v, weight);
+            }
+        }
+        merged
+    }
+}
+
 impl<T: std::fmt::Display> std::fmt::Display for GraphMatrix<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (i, row) in self.matrix.iter().enumerate() {

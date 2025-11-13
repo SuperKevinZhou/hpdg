@@ -1938,6 +1938,16 @@ impl Merger {
         }
     }
 
+    pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
+        let mut graph = Graph::new(u.max(v), self.directed);
+        graph.add_edge(u, v, w);
+        self.graphs.push(graph);
+    }
+
+    pub fn to_string(&self) -> String {
+        self.to_graph().to_string(false, None, None)
+    }
+
     pub fn to_graph(&self) -> Graph {
         let mut max_node = 0usize;
         for graph in &self.graphs {

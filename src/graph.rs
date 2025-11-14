@@ -1962,6 +1962,51 @@ impl Merger {
         }
         merged
     }
+
+    pub fn component(
+        point_count: usize,
+        edge_count: usize,
+        component_count: usize,
+        directed: bool,
+    ) -> Graph {
+        assert!(point_count > 0, "point_count must be above zero");
+        assert!(component_count >= 1 && component_count <= point_count, "invalid component_count");
+        assert!(
+            edge_count >= point_count - component_count,
+            "edge_count too small for requested components"
+        );
+
+        let mut sizes = vec![point_count / component_count; component_count];
+        for i in 0..(point_count % component_count) {
+            sizes[i] += 1;
+        }
+
+        let base_edges = point_count - component_count;
+        let mut extra_edges = edge_count - base_edges;
+        let mut graphs = Vec::new();
+
+        for size in sizes {
+            let extra = if extra_edges == 0 { 0 } else { 1 };
+            if extra_edges > 0 {
+                extra_edges -= 1;
+            }
+            let edges_for_component = size.saturating_sub(1) + extra;
+            let graph = Graph::connected(size, edges_for_component, directed, None, None);
+            graphs.push(graph);
+        }
+
+        let mut merged = Graph::new(point_count, directed);
+        let mut offset = 0usize;
+        for graph in graphs {
+            for edge in graph.iter_edges_all() {
+                let weight = if edge.weighted { Some(edge.w) } else { None };
+                merged.add_edge(edge.u + offset, edge.v + offset, weight);
+            }
+            offset += graph.node_count();
+        }
+
+        merged
+    }
 }
 
 impl<T: std::fmt::Display> std::fmt::Display for GraphMatrix<T> {

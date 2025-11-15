@@ -922,6 +922,28 @@ impl Graph {
         }
         edges
     }
+
+    pub fn relabel<F>(&self, mut f: F) -> Graph
+    where
+        F: FnMut(usize) -> usize,
+    {
+        let mut nodes: std::collections::HashSet<usize> = std::collections::HashSet::new();
+        for &node in self.edges.keys() {
+            nodes.insert(f(node));
+        }
+        let mut graph = Graph::with_nodes(nodes.into_iter(), self.directed);
+        for edge in self.iter_edges_all() {
+            let u = f(edge.u);
+            let v = f(edge.v);
+            let weight = if edge.weighted { Some(edge.w) } else { None };
+            graph.add_edge(u, v, weight);
+        }
+        graph
+    }
+
+    pub fn offset_labels(&self, offset: usize) -> Graph {
+        self.relabel(|node| node + offset)
+    }
 }
 
 impl fmt::Display for Graph {

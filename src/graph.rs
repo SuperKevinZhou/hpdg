@@ -944,6 +944,32 @@ impl Graph {
     pub fn offset_labels(&self, offset: usize) -> Graph {
         self.relabel(|node| node + offset)
     }
+
+    pub fn subgraph_by_nodes(&self, nodes: &std::collections::HashSet<usize>) -> Graph {
+        let mut graph = Graph::with_nodes(nodes.iter().cloned(), self.directed);
+        for edge in self.iter_edges_all() {
+            if nodes.contains(&edge.u) && nodes.contains(&edge.v) {
+                let weight = if edge.weighted { Some(edge.w) } else { None };
+                graph.add_edge(edge.u, edge.v, weight);
+            }
+        }
+        graph
+    }
+
+    pub fn filter_edges<F>(&self, mut predicate: F) -> Graph
+    where
+        F: FnMut(&Edge) -> bool,
+    {
+        let nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        let mut graph = Graph::with_nodes(nodes, self.directed);
+        for edge in self.iter_edges_all() {
+            if predicate(edge) {
+                let weight = if edge.weighted { Some(edge.w) } else { None };
+                graph.add_edge(edge.u, edge.v, weight);
+            }
+        }
+        graph
+    }
 }
 
 impl fmt::Display for Graph {

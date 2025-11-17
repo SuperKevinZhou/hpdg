@@ -970,6 +970,37 @@ impl Graph {
         }
         graph
     }
+
+    pub fn dedup_edges(&mut self) {
+        for edges in self.edges.values_mut() {
+            let mut seen: std::collections::HashSet<(usize, usize, i64, bool)> =
+                std::collections::HashSet::new();
+            edges.retain(|edge| {
+                let key = (edge.u, edge.v, edge.w, edge.weighted);
+                if seen.contains(&key) {
+                    false
+                } else {
+                    seen.insert(key);
+                    true
+                }
+            });
+        }
+    }
+
+    pub fn normalize_undirected(&mut self) {
+        if self.directed {
+            return;
+        }
+        for edges in self.edges.values_mut() {
+            for edge in edges.iter_mut() {
+                if edge.u > edge.v {
+                    let tmp = edge.u;
+                    edge.u = edge.v;
+                    edge.v = tmp;
+                }
+            }
+        }
+    }
 }
 
 impl fmt::Display for Graph {

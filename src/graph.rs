@@ -1001,6 +1001,24 @@ impl Graph {
             }
         }
     }
+
+    pub fn weight_uniform(min_weight: i64, max_weight: i64) -> impl FnMut(&mut ThreadRng) -> i64 {
+        move |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight)
+    }
+
+    pub fn weight_exponential(
+        min_weight: i64,
+        max_weight: i64,
+        lambda: f64,
+    ) -> impl FnMut(&mut ThreadRng) -> i64 {
+        let lambda = lambda.max(1e-6);
+        move |rng: &mut ThreadRng| {
+            let u: f64 = rng.random();
+            let t = 1.0 - (1.0 - u).powf(lambda);
+            let value = min_weight as f64 + t * (max_weight - min_weight) as f64;
+            value.round() as i64
+        }
+    }
 }
 
 impl fmt::Display for Graph {

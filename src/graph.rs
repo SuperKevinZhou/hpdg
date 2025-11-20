@@ -1326,6 +1326,7 @@ impl Graph {
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
         assert!(point_count > 0, "point_count must be above zero");
+        Graph::validate_graph_params(point_count, edge_count, directed, self_loop, repeated_edges);
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
@@ -1911,6 +1912,22 @@ impl Graph {
             point_count.saturating_mul(point_count.saturating_add(1)) / 2
         } else {
             point_count.saturating_mul(point_count.saturating_sub(1)) / 2
+        }
+    }
+
+    pub fn validate_graph_params(
+        point_count: usize,
+        edge_count: usize,
+        directed: bool,
+        self_loop: bool,
+        repeated_edges: bool,
+    ) {
+        if !repeated_edges {
+            let max_edges = Graph::max_edge_count(point_count, directed, self_loop);
+            assert!(
+                edge_count <= max_edges,
+                "edge_count exceeds max possible edges for this configuration"
+            );
         }
     }
 

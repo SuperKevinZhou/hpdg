@@ -1336,7 +1336,8 @@ impl Graph {
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
 
         let mut graph = Graph::new(point_count, directed);
-        let mut used: std::collections::HashSet<(usize, usize)> = std::collections::HashSet::new();
+        let mut used: std::collections::HashSet<(usize, usize)> =
+            std::collections::HashSet::with_capacity(edge_count.saturating_mul(2));
         let mut count = 0usize;
 
         while count < edge_count {

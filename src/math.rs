@@ -362,3 +362,13 @@ mod tests {
         assert_eq!(divisor_sum(100), 217);
     }
 }
+
+pub fn is_palindromic<T: ToString>(v: T) -> bool {
+    let s = v.to_string();
+    if s.chars().all(|c| c.is_ascii_digit()) {
+        if let Ok(n) = s.parse::<u64>() {
+            return is_pal_u64(n);
+        }
+    }
+    is_pal_string(s)
+}

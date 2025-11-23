@@ -134,6 +134,10 @@ pub fn is_pandigital(n: &str, s: usize) -> bool {
     }
 }
 
+pub fn is_pandigital_num<T: std::fmt::Display>(n: T, s: usize) -> bool {
+    is_pandigital(&n.to_string(), s)
+}
+
 #[inline]
 pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
     if s == 0 || s > 10 {

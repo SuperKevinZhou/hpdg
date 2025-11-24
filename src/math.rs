@@ -96,6 +96,10 @@ pub fn divisor_sum(n: u64) -> u64 {
     sum
 }
 
+pub fn d(n: u64) -> u64 {
+    divisor_sum(n)
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

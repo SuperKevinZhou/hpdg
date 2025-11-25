@@ -100,6 +100,35 @@ pub fn d(n: u64) -> u64 {
     divisor_sum(n)
 }
 
+pub fn pal_list(k: usize) -> Vec<u64> {
+    if k == 0 {
+        return Vec::new();
+    }
+    if k == 1 {
+        return (1..=9).collect();
+    }
+
+    let half_len = (k + 1) / 2;
+    let start = 10u64.pow((half_len - 1) as u32);
+    let end = 10u64.pow(half_len as u32);
+    let mut res = Vec::new();
+
+    for half in start..end {
+        let mut x = half;
+        let mut pal = half;
+        if k % 2 == 1 {
+            x /= 10;
+        }
+        while x > 0 {
+            pal = pal * 10 + x % 10;
+            x /= 10;
+        }
+        res.push(pal);
+    }
+
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

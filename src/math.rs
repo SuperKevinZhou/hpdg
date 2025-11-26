@@ -1,5 +1,18 @@
 //! This is a module that supports some useful maths functions.
 
+const DIGIT_FACT: [u64; 10] = [
+    1,          // 0!
+    1,          // 1!
+    2,          // 2!
+    6,          // 3!
+    24,         // 4!
+    120,        // 5!
+    720,        // 6!
+    5040,       // 7!
+    40320,      // 8!
+    362880,     // 9!
+];
+
 /// Check if two numbers are permutations of each other.
 pub fn is_perm(a: u64, b: u64) -> bool {
     if a == 0 && b == 0 {
@@ -127,6 +140,20 @@ pub fn pal_list(k: usize) -> Vec<u64> {
     }
 
     res
+}
+
+pub fn sof_digits(n: u64) -> u64 {
+    if n == 0 {
+        return DIGIT_FACT[0];
+    }
+    let mut x = n;
+    let mut sum = 0u64;
+    while x > 0 {
+        let digit = (x % 10) as usize;
+        sum += DIGIT_FACT[digit];
+        x /= 10;
+    }
+    sum
 }
 
 pub fn is_pandigital(n: &str, s: usize) -> bool {

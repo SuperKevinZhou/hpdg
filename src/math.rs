@@ -167,6 +167,17 @@ pub fn sos_digits(n: u64) -> u64 {
     sum
 }
 
+pub fn pow_digits(n: u64, e: u32) -> u64 {
+    let mut x = n;
+    let mut sum = 0u64;
+    while x > 0 {
+        let digit = x % 10;
+        sum += digit.pow(e);
+        x /= 10;
+    }
+    sum
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

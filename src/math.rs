@@ -178,6 +178,24 @@ pub fn pow_digits(n: u64, e: u32) -> u64 {
     sum
 }
 
+fn fib_pair(n: u64) -> (u64, u64) {
+    if n == 0 {
+        return (0, 1);
+    }
+    let (a, b) = fib_pair(n / 2);
+    let c = (a as u128 * ((2 * b - a) as u128)) as u64;
+    let d = ((a as u128 * a as u128) + (b as u128 * b as u128)) as u64;
+    if n % 2 == 0 {
+        (c, d)
+    } else {
+        (d, c + d)
+    }
+}
+
+pub fn fibonacci(n: u64) -> u64 {
+    fib_pair(n).0
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

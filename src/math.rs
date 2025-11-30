@@ -196,6 +196,37 @@ pub fn fibonacci(n: u64) -> u64 {
     fib_pair(n).0
 }
 
+pub fn fibonacci_list(n: usize) -> Vec<u64> {
+    let mut res = Vec::with_capacity(n);
+    let mut a = 0u64;
+    let mut b = 1u64;
+    for _ in 0..n {
+        res.push(a);
+        let next = a + b;
+        a = b;
+        b = next;
+    }
+    res
+}
+
+pub fn fibonacci_range(start: u64, end: u64) -> Vec<u64> {
+    if start > end {
+        return Vec::new();
+    }
+    let mut res = Vec::new();
+    let mut a = 0u64;
+    let mut b = 1u64;
+    for i in 0..=end {
+        if i >= start {
+            res.push(a);
+        }
+        let next = a + b;
+        a = b;
+        b = next;
+    }
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

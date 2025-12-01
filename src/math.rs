@@ -227,6 +227,23 @@ pub fn fibonacci_range(start: u64, end: u64) -> Vec<u64> {
     res
 }
 
+pub fn is_prime(n: u64) -> bool {
+    if n < 2 {
+        return false;
+    }
+    if n % 2 == 0 {
+        return n == 2;
+    }
+    let mut i = 3u64;
+    while i <= n / i {
+        if n % i == 0 {
+            return false;
+        }
+        i += 2;
+    }
+    true
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

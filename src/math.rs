@@ -244,6 +244,70 @@ pub fn is_prime(n: u64) -> bool {
     true
 }
 
+fn mod_mul(a: u64, b: u64, m: u64) -> u64 {
+    ((a as u128 * b as u128) % m as u128) as u64
+}
+
+fn mod_pow(mut a: u64, mut d: u64, m: u64) -> u64 {
+    let mut res = 1u64;
+    while d > 0 {
+        if d & 1 == 1 {
+            res = mod_mul(res, a, m);
+        }
+        a = mod_mul(a, a, m);
+        d >>= 1;
+    }
+    res
+}
+
+fn miller_rabin_pass(a: u64, s: u64, d: u64, n: u64) -> bool {
+    let mut x = mod_pow(a, d, n);
+    if x == 1 || x == n - 1 {
+        return true;
+    }
+    for _ in 1..s {
+        x = mod_mul(x, x, n);
+        if x == n - 1 {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn miller_rabin(n: u64, repeat_time: u32) -> bool {
+    if n < 4 {
+        return n == 2 || n == 3;
+    }
+    if n % 2 == 0 {
+        return false;
+    }
+
+    let mut d = n - 1;
+    let mut s = 0u64;
+    while d % 2 == 0 {
+        d /= 2;
+        s += 1;
+    }
+
+    let bases: [u64; 7] = [2, 3, 5, 7, 11, 13, 17];
+    let rounds = if repeat_time == 0 {
+        bases.len() as u32
+    } else {
+        repeat_time.min(bases.len() as u32)
+    };
+
+    for &a in bases.iter().take(rounds as usize) {
+        let a = a % n;
+        if a == 0 {
+            continue;
+        }
+        if !miller_rabin_pass(a, s, d, n) {
+            return false;
+        }
+    }
+    true
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

@@ -308,6 +308,33 @@ pub fn miller_rabin(n: u64, repeat_time: u32) -> bool {
     true
 }
 
+pub fn factor(mut n: u64) -> Vec<(u64, u32)> {
+    let mut res = Vec::new();
+    if n < 2 {
+        return res;
+    }
+    let mut p = 2u64;
+    while p * p <= n {
+        if n % p == 0 {
+            let mut e = 0u32;
+            while n % p == 0 {
+                n /= p;
+                e += 1;
+            }
+            res.push((p, e));
+        }
+        if p == 2 {
+            p = 3;
+        } else {
+            p += 2;
+        }
+    }
+    if n > 1 {
+        res.push((n, 1));
+    }
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

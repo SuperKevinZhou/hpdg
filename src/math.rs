@@ -335,6 +335,32 @@ pub fn factor(mut n: u64) -> Vec<(u64, u32)> {
     res
 }
 
+pub fn perm(mut n: u64, s: &str) -> String {
+    let mut chars: Vec<char> = s.chars().collect();
+    let len = chars.len();
+    if len == 0 {
+        return String::new();
+    }
+
+    let mut fact = vec![1u64; len + 1];
+    for i in 1..=len {
+        fact[i] = fact[i - 1].saturating_mul(i as u64);
+    }
+    if fact[len] > 0 {
+        n %= fact[len];
+    }
+
+    let mut res = String::with_capacity(len);
+    for i in (1..=len).rev() {
+        let f = fact[i - 1];
+        let idx = (n / f) as usize;
+        n %= f;
+        let ch = chars.remove(idx);
+        res.push(ch);
+    }
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

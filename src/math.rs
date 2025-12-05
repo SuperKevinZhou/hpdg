@@ -361,6 +361,18 @@ pub fn perm(mut n: u64, s: &str) -> String {
     res
 }
 
+pub fn binomial(n: u64, k: u64) -> u128 {
+    if k > n {
+        return 0;
+    }
+    let k = k.min(n - k);
+    let mut res: u128 = 1;
+    for i in 0..k {
+        res = res * (n - i) as u128 / (i + 1) as u128;
+    }
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

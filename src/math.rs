@@ -373,6 +373,16 @@ pub fn binomial(n: u64, k: u64) -> u128 {
     res
 }
 
+pub fn catalan_number(n: u64) -> u128 {
+    let mut num: u128 = 1;
+    let mut den: u128 = 1;
+    for k in 2..=n {
+        num *= (n + k) as u128;
+        den *= k as u128;
+    }
+    num / den
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

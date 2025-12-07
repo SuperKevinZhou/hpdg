@@ -383,6 +383,38 @@ pub fn catalan_number(n: u64) -> u128 {
     num / den
 }
 
+pub fn prime_sieve(n: u64) -> Vec<u64> {
+    if n <= 2 {
+        return Vec::new();
+    }
+
+    let size = (n / 2) as usize;
+    let mut sieve = vec![true; size];
+    let mut i = 3u64;
+    while i * i < n {
+        if sieve[(i / 2) as usize] {
+            let mut j = i * i;
+            let step = i * 2;
+            while j < n {
+                sieve[(j / 2) as usize] = false;
+                j += step;
+            }
+        }
+        i += 2;
+    }
+
+    let mut res = Vec::new();
+    res.push(2);
+    let mut i = 3u64;
+    while i < n {
+        if sieve[(i / 2) as usize] {
+            res.push(i);
+        }
+        i += 2;
+    }
+    res
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

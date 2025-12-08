@@ -415,6 +415,23 @@ pub fn prime_sieve(n: u64) -> Vec<u64> {
     res
 }
 
+pub fn exgcd(mut a: i64, mut b: i64) -> (i64, i64, i64) {
+    let (mut u, mut v, mut s, mut t) = (1i64, 0i64, 0i64, 1i64);
+    while b != 0 {
+        let q = a / b;
+        let r = a % b;
+        a = b;
+        b = r;
+        let next_u = u - q * s;
+        let next_v = v - q * t;
+        u = s;
+        v = t;
+        s = next_u;
+        t = next_v;
+    }
+    (u, v, a)
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

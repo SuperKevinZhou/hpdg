@@ -432,6 +432,21 @@ pub fn exgcd(mut a: i64, mut b: i64) -> (i64, i64, i64) {
     (u, v, a)
 }
 
+pub fn mod_inverse(a: i64, m: i64) -> Option<i64> {
+    if m == 0 {
+        return None;
+    }
+    let (x, _, g) = exgcd(a, m);
+    if g != 1 && g != -1 {
+        return None;
+    }
+    let mut res = x % m;
+    if res < 0 {
+        res += m.abs();
+    }
+    Some(res)
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

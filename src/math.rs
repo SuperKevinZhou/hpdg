@@ -447,6 +447,21 @@ pub fn mod_inverse(a: i64, m: i64) -> Option<i64> {
     Some(res)
 }
 
+pub fn phi(x: u64) -> u64 {
+    if x == 0 {
+        return 0;
+    }
+    if x == 1 {
+        return 1;
+    }
+    let factors = factor(x);
+    let mut ans = x;
+    for (p, _) in factors {
+        ans = ans / p * (p - 1);
+    }
+    ans
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

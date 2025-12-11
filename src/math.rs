@@ -462,6 +462,26 @@ pub fn phi(x: u64) -> u64 {
     ans
 }
 
+pub fn miu(x: u64) -> i32 {
+    if x == 0 {
+        return 0;
+    }
+    if x == 1 {
+        return 1;
+    }
+    let factors = factor(x);
+    for (_, e) in factors.iter() {
+        if *e > 1 {
+            return 0;
+        }
+    }
+    if factors.len() % 2 == 0 {
+        1
+    } else {
+        -1
+    }
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

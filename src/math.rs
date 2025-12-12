@@ -482,6 +482,25 @@ pub fn miu(x: u64) -> i32 {
     }
 }
 
+pub fn dec2base(mut n: u64, base: u32) -> String {
+    if base < 2 || base > 16 {
+        return String::new();
+    }
+    if n == 0 {
+        return "0".to_string();
+    }
+    const DIGITS: &[u8; 16] = b"0123456789ABCDEF";
+    let mut buf = Vec::new();
+    let b = base as u64;
+    while n > 0 {
+        let idx = (n % b) as usize;
+        buf.push(DIGITS[idx]);
+        n /= b;
+    }
+    buf.reverse();
+    String::from_utf8(buf).unwrap_or_default()
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

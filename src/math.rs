@@ -501,6 +501,74 @@ pub fn dec2base(mut n: u64, base: u32) -> String {
     String::from_utf8(buf).unwrap_or_default()
 }
 
+pub fn n2words_list(num: u64) -> Vec<String> {
+    let units = [
+        "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    ];
+    let teens = [
+        "", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
+        "Eighteen", "Nineteen",
+    ];
+    let tens = [
+        "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty",
+        "Ninety",
+    ];
+    let thousands = [
+        "", "Thousand", "Million", "Billion", "Trillion", "Quadrillion", "Quintillion",
+        "Sextillion", "Septillion", "Octillion", "Nonillion", "Decillion", "Undecillion",
+        "Duodecillion", "Tredecillion", "Quattuordecillion", "Sexdecillion",
+        "Septendecillion", "Octodecillion", "Novemdecillion", "Vigintillion",
+    ];
+
+    if num == 0 {
+        return vec!["zero".to_string()];
+    }
+
+    let num_str = num.to_string();
+    let groups = (num_str.len() + 2) / 3;
+    let num_str = format!("{:0width$}", num, width = groups * 3);
+    let bytes = num_str.as_bytes();
+    let mut words: Vec<String> = Vec::new();
+
+    for i in 0..groups {
+        let idx = i * 3;
+        let h = (bytes[idx] - b'0') as usize;
+        let t = (bytes[idx + 1] - b'0') as usize;
+        let u = (bytes[idx + 2] - b'0') as usize;
+        let g = groups - (i + 1);
+
+        if h >= 1 {
+            words.push(units[h].to_string());
+            words.push("Hundred".to_string());
+        }
+        if t > 1 {
+            words.push(tens[t].to_string());
+            if u >= 1 {
+                words.push(units[u].to_string());
+            }
+        } else if t == 1 {
+            if u >= 1 {
+                words.push(teens[u].to_string());
+            } else {
+                words.push(tens[t].to_string());
+            }
+        } else if u >= 1 {
+            words.push(units[u].to_string());
+        }
+        if g >= 1 && (h + t + u) > 0 {
+            if g < thousands.len() {
+                words.push(thousands[g].to_string());
+            }
+        }
+    }
+
+    words
+}
+
+pub fn n2words(num: u64) -> String {
+    n2words_list(num).join(" ")
+}
+
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();

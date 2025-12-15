@@ -750,6 +750,14 @@ mod tests {
     }
 
     #[test]
+    fn test_is_palindromic_generic() {
+        assert!(is_palindromic(121u64));
+        assert!(is_palindromic("abba"));
+        assert!(!is_palindromic(123u64));
+        assert!(!is_palindromic("abcd"));
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

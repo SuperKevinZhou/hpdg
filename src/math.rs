@@ -758,6 +758,20 @@ mod tests {
     }
 
     #[test]
+    fn test_pal_list() {
+        assert!(pal_list(0).is_empty());
+        assert_eq!(pal_list(1), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        assert_eq!(
+            pal_list(2),
+            vec![11, 22, 33, 44, 55, 66, 77, 88, 99]
+        );
+        let pals3 = pal_list(3);
+        assert_eq!(pals3.len(), 90);
+        assert_eq!(pals3.first().copied(), Some(101));
+        assert_eq!(pals3.last().copied(), Some(999));
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

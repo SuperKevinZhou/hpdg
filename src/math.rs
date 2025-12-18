@@ -772,6 +772,14 @@ mod tests {
     }
 
     #[test]
+    fn test_digit_sums() {
+        assert_eq!(sof_digits(0), 1);
+        assert_eq!(sof_digits(145), 145);
+        assert_eq!(sos_digits(19), 82);
+        assert_eq!(pow_digits(123, 3), 36);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

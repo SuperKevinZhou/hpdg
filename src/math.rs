@@ -780,6 +780,15 @@ mod tests {
     }
 
     #[test]
+    fn test_fibonacci() {
+        assert_eq!(fibonacci(0), 0);
+        assert_eq!(fibonacci(1), 1);
+        assert_eq!(fibonacci(10), 55);
+        assert_eq!(fibonacci_list(5), vec![0, 1, 1, 2, 3]);
+        assert_eq!(fibonacci_range(2, 5), vec![1, 2, 3, 5]);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

@@ -789,6 +789,17 @@ mod tests {
     }
 
     #[test]
+    fn test_is_prime_and_miller_rabin() {
+        assert!(!is_prime(1));
+        assert!(is_prime(2));
+        assert!(is_prime(3));
+        assert!(!is_prime(9));
+        assert!(miller_rabin(2, 0));
+        assert!(miller_rabin(17, 0));
+        assert!(!miller_rabin(21, 0));
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

@@ -800,6 +800,12 @@ mod tests {
     }
 
     #[test]
+    fn test_factor() {
+        assert_eq!(factor(1), Vec::new());
+        assert_eq!(factor(60), vec![(2, 2), (3, 1), (5, 1)]);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

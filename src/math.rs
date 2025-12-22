@@ -806,6 +806,15 @@ mod tests {
     }
 
     #[test]
+    fn test_binomial_and_catalan() {
+        assert_eq!(binomial(5, 2), 10);
+        assert_eq!(binomial(30, 12), 86493225);
+        assert_eq!(catalan_number(0), 1);
+        assert_eq!(catalan_number(4), 14);
+        assert_eq!(catalan_number(10), 16796);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

@@ -815,6 +815,12 @@ mod tests {
     }
 
     #[test]
+    fn test_prime_sieve() {
+        assert!(prime_sieve(2).is_empty());
+        assert_eq!(prime_sieve(25), vec![2, 3, 5, 7, 11, 13, 17, 19, 23]);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

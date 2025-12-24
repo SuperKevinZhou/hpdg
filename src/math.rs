@@ -821,6 +821,15 @@ mod tests {
     }
 
     #[test]
+    fn test_exgcd_and_mod_inverse() {
+        let (x, y, g) = exgcd(21, 15);
+        assert_eq!(g, 3);
+        assert_eq!(21 * x + 15 * y, g);
+        assert_eq!(mod_inverse(3, 11), Some(4));
+        assert_eq!(mod_inverse(2, 4), None);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

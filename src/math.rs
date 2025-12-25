@@ -830,6 +830,16 @@ mod tests {
     }
 
     #[test]
+    fn test_phi_and_miu() {
+        assert_eq!(phi(1), 1);
+        assert_eq!(phi(9), 6);
+        assert_eq!(phi(10), 4);
+        assert_eq!(miu(1), 1);
+        assert_eq!(miu(4), 0);
+        assert_eq!(miu(30), -1);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

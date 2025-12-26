@@ -840,6 +840,14 @@ mod tests {
     }
 
     #[test]
+    fn test_dec2base() {
+        assert_eq!(dec2base(0, 2), "0");
+        assert_eq!(dec2base(10, 2), "1010");
+        assert_eq!(dec2base(31, 16), "1F");
+        assert_eq!(dec2base(10, 1), "");
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

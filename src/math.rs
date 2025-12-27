@@ -848,6 +848,15 @@ mod tests {
     }
 
     #[test]
+    fn test_n2words() {
+        assert_eq!(n2words(0), "zero");
+        assert_eq!(n2words(7), "Seven");
+        assert_eq!(n2words(19), "Nineteen");
+        assert_eq!(n2words(105), "One Hundred Five");
+        assert_eq!(n2words_list(1000), vec!["One", "Thousand"]);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

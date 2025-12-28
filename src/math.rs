@@ -358,6 +358,8 @@ pub fn factor(mut n: u64) -> Vec<(u64, u32)> {
     res
 }
 
+/// Return the nth (0-based) permutation of the input string.
+/// Example: perm(3, "abc") -> "bac".
 pub fn perm(mut n: u64, s: &str) -> String {
     let mut chars: Vec<char> = s.chars().collect();
     let len = chars.len();
@@ -384,6 +386,8 @@ pub fn perm(mut n: u64, s: &str) -> String {
     res
 }
 
+/// Compute the binomial coefficient C(n, k).
+/// Example: binomial(5, 2) -> 10.
 pub fn binomial(n: u64, k: u64) -> u128 {
     if k > n {
         return 0;
@@ -396,6 +400,8 @@ pub fn binomial(n: u64, k: u64) -> u128 {
     res
 }
 
+/// Compute the nth Catalan number.
+/// Example: catalan_number(4) -> 14.
 pub fn catalan_number(n: u64) -> u128 {
     let mut num: u128 = 1;
     let mut den: u128 = 1;
@@ -406,6 +412,8 @@ pub fn catalan_number(n: u64) -> u128 {
     num / den
 }
 
+/// Generate primes in [2, n) with a simple sieve.
+/// Example: prime_sieve(10) -> [2, 3, 5, 7].
 pub fn prime_sieve(n: u64) -> Vec<u64> {
     if n <= 2 {
         return Vec::new();
@@ -438,6 +446,8 @@ pub fn prime_sieve(n: u64) -> Vec<u64> {
     res
 }
 
+/// Extended Euclidean algorithm.
+/// Returns (x, y, gcd) such that a*x + b*y = gcd.
 pub fn exgcd(mut a: i64, mut b: i64) -> (i64, i64, i64) {
     let (mut u, mut v, mut s, mut t) = (1i64, 0i64, 0i64, 1i64);
     while b != 0 {
@@ -455,6 +465,7 @@ pub fn exgcd(mut a: i64, mut b: i64) -> (i64, i64, i64) {
     (u, v, a)
 }
 
+/// Modular inverse of a modulo m, if it exists.
 pub fn mod_inverse(a: i64, m: i64) -> Option<i64> {
     if m == 0 {
         return None;
@@ -470,6 +481,7 @@ pub fn mod_inverse(a: i64, m: i64) -> Option<i64> {
     Some(res)
 }
 
+/// Euler's totient function.
 pub fn phi(x: u64) -> u64 {
     if x == 0 {
         return 0;
@@ -485,6 +497,7 @@ pub fn phi(x: u64) -> u64 {
     ans
 }
 
+/// Möbius function.
 pub fn miu(x: u64) -> i32 {
     if x == 0 {
         return 0;
@@ -505,6 +518,7 @@ pub fn miu(x: u64) -> i32 {
     }
 }
 
+/// Convert a decimal number to the given base (2..=16).
 pub fn dec2base(mut n: u64, base: u32) -> String {
     if base < 2 || base > 16 {
         return String::new();
@@ -524,6 +538,7 @@ pub fn dec2base(mut n: u64, base: u32) -> String {
     String::from_utf8(buf).unwrap_or_default()
 }
 
+/// Convert a number into English words (list form).
 pub fn n2words_list(num: u64) -> Vec<String> {
     let units = [
         "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
@@ -588,6 +603,7 @@ pub fn n2words_list(num: u64) -> Vec<String> {
     words
 }
 
+/// Convert a number into English words (joined by spaces).
 pub fn n2words(num: u64) -> String {
     n2words_list(num).join(" ")
 }

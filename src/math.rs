@@ -36,6 +36,15 @@ pub const POW10: [u64; 20] = [
     10000000000000000000,   // 10^19
 ];
 
+#[inline]
+fn digit_len(n: u64) -> u32 {
+    if n == 0 {
+        1
+    } else {
+        n.ilog10() + 1
+    }
+}
+
 /// Check if two numbers are permutations of each other.
 pub fn is_perm(a: u64, b: u64) -> bool {
     if a == 0 && b == 0 {
@@ -44,7 +53,7 @@ pub fn is_perm(a: u64, b: u64) -> bool {
         return false;
     }
     
-    if (a as f64).log10().floor() != (b as f64).log10().floor() {
+    if digit_len(a) != digit_len(b) {
         return false;
     }
     

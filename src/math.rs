@@ -882,6 +882,24 @@ mod tests {
     }
 
     #[test]
+    fn test_math_edge_cases() {
+        assert!(is_perm(0, 0));
+        assert!(!is_perm(0, 1));
+        assert_eq!(pow_digits(0, 3), 0);
+        assert!(fibonacci_range(5, 4).is_empty());
+    }
+
+    #[test]
+    fn test_math_bench_smoke() {
+        let mut sum = 0u64;
+        for n in 1..2000u64 {
+            sum += pow_digits(n, 2);
+            sum += sof_digits(n);
+        }
+        assert!(sum > 0);
+    }
+
+    #[test]
     fn test_s9_valid() {
         assert!(is_pandigital("123456789", 9));
     }

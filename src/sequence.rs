@@ -55,4 +55,18 @@ where
         let initial = initial.into().into_map();
         Self { formula, initial }
     }
+
+    pub fn get_one(&self, i: usize) -> T {
+        if let Some(value) = self.initial.get(&i) {
+            return value.clone();
+        }
+        (self.formula)(i, &|idx| self.get_one(idx))
+    }
+
+    pub fn get_range(&self, left: usize, right: usize) -> Vec<T> {
+        if left > right {
+            return Vec::new();
+        }
+        (left..=right).map(|i| self.get_one(i)).collect()
+    }
 }

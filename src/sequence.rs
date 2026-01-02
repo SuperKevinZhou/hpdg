@@ -1,4 +1,5 @@
-﻿use std::collections::HashMap;
+﻿use std::cell::RefCell;
+use std::collections::HashMap;
 
 /// Initial values used by a sequence.
 pub enum SequenceInit<T> {
@@ -33,7 +34,7 @@ where
     F: Fn(usize, &dyn Fn(usize) -> T) -> T,
 {
     formula: F,
-    initial: HashMap<usize, T>,
+    values: RefCell<HashMap<usize, T>>,
 }
 
 impl<T, F> Sequence<T, F>
@@ -44,7 +45,7 @@ where
     pub fn new(formula: F) -> Self {
         Self {
             formula,
-            initial: HashMap::new(),
+            values: RefCell::new(HashMap::new()),
         }
     }
 
@@ -53,14 +54,19 @@ where
         I: Into<SequenceInit<T>>,
     {
         let initial = initial.into().into_map();
-        Self { formula, initial }
+        Self {
+            formula,
+            values: RefCell::new(initial),
+        }
     }
 
     pub fn get_one(&self, i: usize) -> T {
-        if let Some(value) = self.initial.get(&i) {
+        if let Some(value) = self.values.borrow().get(&i) {
             return value.clone();
         }
-        (self.formula)(i, &|idx| self.get_one(idx))
+        let value = (self.formula)(i, &|idx| self.get_one(idx));
+        self.values.borrow_mut().insert(i, value.clone());
+        value
     }
 
     pub fn get_range(&self, left: usize, right: usize) -> Vec<T> {

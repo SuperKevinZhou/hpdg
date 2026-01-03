@@ -75,4 +75,42 @@ where
         }
         (left..=right).map(|i| self.get_one(i)).collect()
     }
+
+    pub fn get_slice(&self, indices: &[usize]) -> Vec<T> {
+        indices.iter().map(|&i| self.get_one(i)).collect()
+    }
+
+    pub fn iter_range(&self, left: usize, right: usize) -> SequenceRangeIter<'_, T, F> {
+        SequenceRangeIter {
+            sequence: self,
+            current: left,
+            end: right,
+        }
+    }
+}
+
+pub struct SequenceRangeIter<'a, T, F>
+where
+    F: Fn(usize, &dyn Fn(usize) -> T) -> T,
+{
+    sequence: &'a Sequence<T, F>,
+    current: usize,
+    end: usize,
+}
+
+impl<'a, T, F> Iterator for SequenceRangeIter<'a, T, F>
+where
+    T: Clone,
+    F: Fn(usize, &dyn Fn(usize) -> T) -> T,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current > self.end {
+            return None;
+        }
+        let value = self.sequence.get_one(self.current);
+        self.current += 1;
+        Some(value)
+    }
 }

@@ -114,3 +114,10 @@ where
         Some(value)
     }
 }
+
+pub fn arithmetic_sequence(
+    start: i64,
+    diff: i64,
+) -> Sequence<i64, impl Fn(usize, &dyn Fn(usize) -> i64) -> i64> {
+    Sequence::new(move |i, _| start + diff * i as i64)
+}

@@ -128,3 +128,29 @@ pub fn geometric_sequence(
 ) -> Sequence<i64, impl Fn(usize, &dyn Fn(usize) -> i64) -> i64> {
     Sequence::new(move |i, _| start * ratio.pow(i as u32))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sequence_basic_formula() {
+        let seq = Sequence::new(|i, _| 2 * i as i64 + 3);
+        assert_eq!(seq.get_one(1), 5);
+        assert_eq!(seq.get_range(1, 3), vec![5, 7, 9]);
+    }
+
+    #[test]
+    fn test_sequence_recursive_formula() {
+        let seq = Sequence::with_initial(|i, f| f(i - 1) + 1, vec![0i64]);
+        assert_eq!(seq.get_range(0, 4), vec![0, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_sequence_helpers() {
+        let ar = arithmetic_sequence(1, 2);
+        assert_eq!(ar.get_range(0, 3), vec![1, 3, 5, 7]);
+        let geo = geometric_sequence(1, 3);
+        assert_eq!(geo.get_range(0, 4), vec![1, 3, 9, 27, 81]);
+    }
+}

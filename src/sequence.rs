@@ -60,6 +60,7 @@ where
         }
     }
 
+    /// Retrieve a single element (memoized).
     pub fn get_one(&self, i: usize) -> T {
         if let Some(value) = self.values.borrow().get(&i) {
             return value.clone();
@@ -69,6 +70,7 @@ where
         value
     }
 
+    /// Retrieve a range [left, right] (inclusive).
     pub fn get_range(&self, left: usize, right: usize) -> Vec<T> {
         if left > right {
             return Vec::new();
@@ -76,10 +78,12 @@ where
         (left..=right).map(|i| self.get_one(i)).collect()
     }
 
+    /// Retrieve elements by an index slice.
     pub fn get_slice(&self, indices: &[usize]) -> Vec<T> {
         indices.iter().map(|&i| self.get_one(i)).collect()
     }
 
+    /// Iterate over a range [left, right] (inclusive).
     pub fn iter_range(&self, left: usize, right: usize) -> SequenceRangeIter<'_, T, F> {
         SequenceRangeIter {
             sequence: self,
@@ -115,6 +119,8 @@ where
     }
 }
 
+/// Helper for arithmetic progressions.
+/// Example: arithmetic_sequence(1, 2) -> 1, 3, 5, ...
 pub fn arithmetic_sequence(
     start: i64,
     diff: i64,
@@ -122,6 +128,8 @@ pub fn arithmetic_sequence(
     Sequence::new(move |i, _| start + diff * i as i64)
 }
 
+/// Helper for geometric progressions.
+/// Example: geometric_sequence(1, 3) -> 1, 3, 9, ...
 pub fn geometric_sequence(
     start: i64,
     ratio: i64,

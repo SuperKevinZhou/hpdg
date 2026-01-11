@@ -114,4 +114,8 @@ impl Vector {
         }
         result
     }
+
+    pub fn random_repeatable_vector(num: usize, position_range: &[IntRange]) -> IntVector {
+        Self::random_int(num, position_range)
+    }
 }

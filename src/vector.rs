@@ -28,6 +28,25 @@ impl From<(i64, i64)> for IntRange {
 }
 
 pub type IntVector = Vec<Vec<i64>>;
+pub type FloatVector = Vec<Vec<f64>>;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FloatRange {
+    Max(f64),
+    MinMax(f64, f64),
+}
+
+impl From<f64> for FloatRange {
+    fn from(value: f64) -> Self {
+        FloatRange::Max(value)
+    }
+}
+
+impl From<(f64, f64)> for FloatRange {
+    fn from(value: (f64, f64)) -> Self {
+        FloatRange::MinMax(value.0, value.1)
+    }
+}
 
 /// Vector utilities (random generators, helpers).
 pub struct Vector;
@@ -50,6 +69,33 @@ fn parse_int_ranges(ranges: &[IntRange]) -> (Vec<i64>, Vec<i64>) {
                 lengths.push(max);
             }
             IntRange::MinMax(min, max) => {
+                assert!(max >= min, "upper-bound should be larger than lower-bound");
+                offsets.push(min);
+                lengths.push(max - min);
+            }
+        }
+    }
+    (offsets, lengths)
+}
+
+fn normalize_float_ranges(position_range: &[FloatRange]) -> Vec<FloatRange> {
+    if position_range.is_empty() {
+        vec![FloatRange::Max(10.0)]
+    } else {
+        position_range.to_vec()
+    }
+}
+
+fn parse_float_ranges(ranges: &[FloatRange]) -> (Vec<f64>, Vec<f64>) {
+    let mut offsets: Vec<f64> = Vec::with_capacity(ranges.len());
+    let mut lengths: Vec<f64> = Vec::with_capacity(ranges.len());
+    for range in ranges {
+        match *range {
+            FloatRange::Max(max) => {
+                offsets.push(0.0);
+                lengths.push(max);
+            }
+            FloatRange::MinMax(min, max) => {
                 assert!(max >= min, "upper-bound should be larger than lower-bound");
                 offsets.push(min);
                 lengths.push(max - min);
@@ -117,5 +163,22 @@ impl Vector {
 
     pub fn random_repeatable_vector(num: usize, position_range: &[IntRange]) -> IntVector {
         Self::random_int(num, position_range)
+    }
+
+    pub fn random_float_vector(num: usize, position_range: &[FloatRange]) -> FloatVector {
+        let ranges = normalize_float_ranges(position_range);
+        let (offsets, lengths) = parse_float_ranges(&ranges);
+
+        let mut rng = rand::rng();
+        let mut result: FloatVector = Vec::with_capacity(num);
+        for _ in 0..num {
+            let mut vec = Vec::with_capacity(ranges.len());
+            for (&offset, &length) in offsets.iter().zip(lengths.iter()) {
+                let val = rng.gen_range(offset..=offset + length);
+                vec.push(val);
+            }
+            result.push(vec);
+        }
+        result
     }
 }

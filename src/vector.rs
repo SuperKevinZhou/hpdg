@@ -181,4 +181,14 @@ impl Vector {
         }
         result
     }
+
+    pub fn get_vector(position_range: &[IntRange], hashcode: u128) -> Vec<i64> {
+        let ranges = normalize_int_ranges(position_range);
+        let (offsets, lengths) = parse_int_ranges(&ranges);
+        let mut vec = get_vector_from_index(&lengths, hashcode);
+        for (v, offset) in vec.iter_mut().zip(offsets.iter()) {
+            *v += *offset;
+        }
+        vec
+    }
 }

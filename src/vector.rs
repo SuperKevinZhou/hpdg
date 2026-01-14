@@ -191,4 +191,9 @@ impl Vector {
         }
         vec
     }
+
+    pub fn random_matrix(rows: usize, cols: usize, range: IntRange) -> IntVector {
+        let ranges = vec![range; cols];
+        Self::random_int(rows, &ranges)
+    }
 }

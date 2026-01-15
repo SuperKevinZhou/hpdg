@@ -196,4 +196,23 @@ impl Vector {
         let ranges = vec![range; cols];
         Self::random_int(rows, &ranges)
     }
+
+    pub fn format_vector<T: std::fmt::Display>(vec: &[T], sep: &str) -> String {
+        vec.iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>()
+            .join(sep)
+    }
+
+    pub fn format_matrix<T: std::fmt::Display>(
+        matrix: &[Vec<T>],
+        sep: &str,
+        row_sep: &str,
+    ) -> String {
+        matrix
+            .iter()
+            .map(|row| Self::format_vector(row, sep))
+            .collect::<Vec<_>>()
+            .join(row_sep)
+    }
 }

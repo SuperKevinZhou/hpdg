@@ -216,3 +216,45 @@ impl Vector {
             .join(row_sep)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_vector() {
+        let ranges = [IntRange::Max(2), IntRange::MinMax(3, 4)];
+        assert_eq!(Vector::get_vector(&ranges, 0), vec![0, 3]);
+        assert_eq!(Vector::get_vector(&ranges, 1), vec![1, 3]);
+    }
+
+    #[test]
+    fn test_random_int_bounds() {
+        let ranges = [IntRange::Max(1)];
+        let vectors = Vector::random_int(3, &ranges);
+        assert_eq!(vectors.len(), 3);
+        for v in vectors {
+            assert_eq!(v.len(), 1);
+            assert!(v[0] >= 0 && v[0] <= 1);
+        }
+    }
+
+    #[test]
+    fn test_random_unique_vectors() {
+        let ranges = [IntRange::Max(1), IntRange::Max(1)];
+        let vectors = Vector::random_unique_vector(4, &ranges);
+        let mut set = std::collections::HashSet::new();
+        for v in vectors {
+            set.insert(v);
+        }
+        assert_eq!(set.len(), 4);
+    }
+
+    #[test]
+    fn test_formatting_helpers() {
+        let v = vec![1, 2, 3];
+        assert_eq!(Vector::format_vector(&v, ","), "1,2,3");
+        let m = vec![vec![1, 2], vec![3, 4]];
+        assert_eq!(Vector::format_matrix(&m, " ", "\n"), "1 2\n3 4");
+    }
+}

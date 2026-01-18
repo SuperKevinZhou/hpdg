@@ -9,6 +9,7 @@ pub enum VectorRandomMode {
     Float,
 }
 
+/// Integer range specification for each dimension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IntRange {
     Max(i64),
@@ -30,6 +31,7 @@ impl From<(i64, i64)> for IntRange {
 pub type IntVector = Vec<Vec<i64>>;
 pub type FloatVector = Vec<Vec<f64>>;
 
+/// Floating-point range specification for each dimension.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FloatRange {
     Max(f64),
@@ -122,6 +124,7 @@ fn get_vector_from_index(lengths: &[i64], mut hashcode: u128) -> Vec<i64> {
 }
 
 impl Vector {
+    /// Generate random integer vectors (duplicates allowed).
     pub fn random_int(num: usize, position_range: &[IntRange]) -> IntVector {
         let ranges = normalize_int_ranges(position_range);
         let (offsets, lengths) = parse_int_ranges(&ranges);
@@ -139,6 +142,7 @@ impl Vector {
         result
     }
 
+    /// Generate random integer vectors without duplicates.
     pub fn random_unique_vector(num: usize, position_range: &[IntRange]) -> IntVector {
         let ranges = normalize_int_ranges(position_range);
         let (offsets, lengths) = parse_int_ranges(&ranges);
@@ -161,10 +165,12 @@ impl Vector {
         result
     }
 
+    /// Generate random integer vectors with duplicates allowed (alias).
     pub fn random_repeatable_vector(num: usize, position_range: &[IntRange]) -> IntVector {
         Self::random_int(num, position_range)
     }
 
+    /// Generate random floating-point vectors.
     pub fn random_float_vector(num: usize, position_range: &[FloatRange]) -> FloatVector {
         let ranges = normalize_float_ranges(position_range);
         let (offsets, lengths) = parse_float_ranges(&ranges);
@@ -182,6 +188,7 @@ impl Vector {
         result
     }
 
+    /// Convert a hashcode into a vector based on the provided ranges.
     pub fn get_vector(position_range: &[IntRange], hashcode: u128) -> Vec<i64> {
         let ranges = normalize_int_ranges(position_range);
         let (offsets, lengths) = parse_int_ranges(&ranges);
@@ -192,11 +199,13 @@ impl Vector {
         vec
     }
 
+    /// Generate an integer matrix with the same range for each column.
     pub fn random_matrix(rows: usize, cols: usize, range: IntRange) -> IntVector {
         let ranges = vec![range; cols];
         Self::random_int(rows, &ranges)
     }
 
+    /// Format a vector with a custom separator.
     pub fn format_vector<T: std::fmt::Display>(vec: &[T], sep: &str) -> String {
         vec.iter()
             .map(|v| v.to_string())
@@ -204,6 +213,7 @@ impl Vector {
             .join(sep)
     }
 
+    /// Format a matrix using column and row separators.
     pub fn format_matrix<T: std::fmt::Display>(
         matrix: &[Vec<T>],
         sep: &str,

@@ -4,3 +4,4 @@ pub mod graph;
 pub mod math;
 pub mod sequence;
 pub mod vector;
+pub mod string;

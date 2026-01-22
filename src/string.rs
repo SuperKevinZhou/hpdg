@@ -204,4 +204,132 @@ impl StringGen {
         }
         paragraph
     }
+
+    pub fn random_regex(pattern: &str, limit: usize) -> String {
+        let mut rng = rand::rng();
+        let lim = if limit <= 1 { 10 } else { limit };
+        let chars: Vec<char> = pattern.chars().collect();
+        let mut i = 0usize;
+        let mut out = String::new();
+        let any_charset: Vec<char> = (ALPHABET.to_string() + NUMBERS + "_").chars().collect();
+
+        while i < chars.len() {
+            let c = chars[i];
+            if c == '^' || c == '$' {
+                i += 1;
+                continue;
+            }
+            let mut charset: Vec<char> = Vec::new();
+            if c == '\\' {
+                i += 1;
+                if i >= chars.len() {
+                    break;
+                }
+                let esc = chars[i];
+                match esc {
+                    'd' => charset.extend(NUMBERS.chars()),
+                    'w' => charset.extend((ALPHABET.to_string() + NUMBERS + "_").chars()),
+                    _ => charset.push(esc),
+                }
+                i += 1;
+            } else if c == '[' {
+                i += 1;
+                while i < chars.len() && chars[i] != ']' {
+                    let ch = chars[i];
+                    if ch == '\\' {
+                        i += 1;
+                        if i >= chars.len() {
+                            break;
+                        }
+                        let esc = chars[i];
+                        match esc {
+                            'd' => charset.extend(NUMBERS.chars()),
+                            'w' => charset.extend((ALPHABET.to_string() + NUMBERS + "_").chars()),
+                            _ => charset.push(esc),
+                        }
+                        i += 1;
+                        continue;
+                    }
+                    if i + 2 < chars.len() && chars[i + 1] == '-' && chars[i + 2] != ']' {
+                        let start = ch as u8;
+                        let end = chars[i + 2] as u8;
+                        if start <= end {
+                            for code in start..=end {
+                                charset.push(code as char);
+                            }
+                        } else {
+                            for code in end..=start {
+                                charset.push(code as char);
+                            }
+                        }
+                        i += 3;
+                        continue;
+                    }
+                    charset.push(ch);
+                    i += 1;
+                }
+                if i < chars.len() && chars[i] == ']' {
+                    i += 1;
+                }
+            } else if c == '.' {
+                charset = any_charset.clone();
+                i += 1;
+            } else {
+                charset.push(c);
+                i += 1;
+            }
+
+            if charset.is_empty() {
+                continue;
+            }
+
+            let mut min = 1usize;
+            let mut max = 1usize;
+            if i < chars.len() {
+                match chars[i] {
+                    '*' => { min = 0; max = lim; i += 1; }
+                    '+' => { min = 1; max = lim; i += 1; }
+                    '?' => { min = 0; max = 1; i += 1; }
+                    '{' => {
+                        let mut j = i + 1;
+                        let mut num1 = String::new();
+                        while j < chars.len() && chars[j].is_ascii_digit() {
+                            num1.push(chars[j]);
+                            j += 1;
+                        }
+                        if !num1.is_empty() {
+                            let parsed_min: usize = num1.parse().unwrap_or(0);
+                            let mut parsed_max = parsed_min;
+                            if j < chars.len() && chars[j] == ',' {
+                                j += 1;
+                                let mut num2 = String::new();
+                                while j < chars.len() && chars[j].is_ascii_digit() {
+                                    num2.push(chars[j]);
+                                    j += 1;
+                                }
+                                if num2.is_empty() {
+                                    parsed_max = lim;
+                                } else {
+                                    parsed_max = num2.parse().unwrap_or(parsed_min);
+                                }
+                            }
+                            if j < chars.len() && chars[j] == '}' {
+                                min = parsed_min;
+                                max = parsed_max;
+                                i = j + 1;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            let count = if min == max { min } else { rng.gen_range(min..=max) };
+            for _ in 0..count {
+                let idx = rng.gen_range(0..charset.len());
+                out.push(charset[idx]);
+            }
+        }
+        out
+    }
 }

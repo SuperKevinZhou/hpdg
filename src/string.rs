@@ -332,4 +332,35 @@ impl StringGen {
         }
         out
     }
+
+    pub fn random_from_dict<T: AsRef<str>>(dict: &[T]) -> String {
+        if dict.is_empty() {
+            return String::new();
+        }
+        let mut rng = rand::rng();
+        let idx = rng.gen_range(0..dict.len());
+        dict[idx].as_ref().to_string()
+    }
+
+    pub fn random_sentence_from_dict<T: AsRef<str>>(
+        word_count_range: impl Into<LengthRange>,
+        dict: &[T],
+        first_letter_uppercase: bool,
+        separator: &str,
+    ) -> String {
+        if dict.is_empty() {
+            return String::new();
+        }
+        let mut rng = rand::rng();
+        let count = pick_len(word_count_range.into(), &mut rng);
+        let mut words: Vec<String> = Vec::with_capacity(count);
+        for _ in 0..count {
+            let idx = rng.gen_range(0..dict.len());
+            words.push(dict[idx].as_ref().to_string());
+        }
+        if first_letter_uppercase && !words.is_empty() {
+            words[0] = capitalize_first(&words[0]);
+        }
+        words.join(separator)
+    }
 }

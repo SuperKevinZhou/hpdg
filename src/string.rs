@@ -13,6 +13,12 @@ pub enum LengthRange {
     Range(usize, usize),
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum CharsetMode {
+    Ascii,
+    Unicode,
+}
+
 impl From<usize> for LengthRange {
     fn from(value: usize) -> Self {
         LengthRange::Exact(value)
@@ -46,6 +52,21 @@ fn capitalize_first(word: &str) -> String {
         None => String::new(),
         Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
     }
+}
+
+fn random_unicode_string(length_range: LengthRange, rng: &mut impl Rng) -> String {
+    let len = pick_len(length_range, rng);
+    let mut out = String::new();
+    for _ in 0..len {
+        loop {
+            let code = rng.gen_range(0x4E00u32..=0x9FFFu32);
+            if let Some(ch) = char::from_u32(code) {
+                out.push(ch);
+                break;
+            }
+        }
+    }
+    out
 }
 
 pub struct StringGen;
@@ -362,5 +383,20 @@ impl StringGen {
             words[0] = capitalize_first(&words[0]);
         }
         words.join(separator)
+    }
+
+    pub fn random_with_mode(
+        length_range: impl Into<LengthRange>,
+        mode: CharsetMode,
+    ) -> String {
+        let mut rng = rand::rng();
+        let len_range = length_range.into();
+        match mode {
+            CharsetMode::Ascii => {
+                let charset = format!("{}{}", ALPHABET, NUMBERS);
+                Self::random(len_range, &charset)
+            }
+            CharsetMode::Unicode => random_unicode_string(len_range, &mut rng),
+        }
     }
 }

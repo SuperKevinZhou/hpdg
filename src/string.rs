@@ -400,3 +400,70 @@ impl StringGen {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_basic_charset() {
+        let s = StringGen::random(10, "abc");
+        assert_eq!(s.len(), 10);
+        assert!(s.chars().all(|c| "abc".contains(c)));
+    }
+
+    #[test]
+    fn test_random_sentence_basic() {
+        let mut cfg = SentenceConfig::default();
+        cfg.word_length_range = LengthRange::Exact(3);
+        cfg.word_separators = " ".to_string();
+        cfg.sentence_terminators = ".".to_string();
+        let sentence = StringGen::random_sentence(3, Some(&cfg));
+        assert!(sentence.ends_with('.'));
+        assert_eq!(sentence.matches(' ').count(), 2);
+        assert!(sentence.chars().next().unwrap().is_uppercase());
+    }
+
+    #[test]
+    fn test_random_paragraph_smoke() {
+        let para = StringGen::random_paragraph(3, None);
+        assert!(!para.is_empty());
+    }
+
+    #[test]
+    fn test_random_regex_simple() {
+        let pattern = "[0-9]+\\w_.{0,9}";
+        let s = StringGen::random_regex(pattern, 5);
+        let chars = s.chars().collect::<Vec<_>>();
+        assert!(!chars.is_empty());
+        let mut idx = 0usize;
+        while idx < chars.len() && chars[idx].is_ascii_digit() {
+            idx += 1;
+        }
+        assert!(idx < chars.len());
+        let word = chars[idx];
+        assert!(word.is_ascii_alphanumeric() || word == '_');
+        idx += 1;
+        assert!(idx < chars.len() && chars[idx] == '_');
+        idx += 1;
+        assert!(chars.len().saturating_sub(idx) <= 9);
+    }
+
+    #[test]
+    fn test_random_dict_helpers() {
+        let dict = ["lorem", "ipsum", "dolor"];
+        let word = StringGen::random_from_dict(&dict);
+        assert!(dict.contains(&word.as_str()));
+        let sentence = StringGen::random_sentence_from_dict(2, &dict, true, " ");
+        assert_eq!(sentence.split(' ').count(), 2);
+    }
+
+    #[test]
+    fn test_random_with_mode() {
+        let ascii = StringGen::random_with_mode(5, CharsetMode::Ascii);
+        assert!(ascii.chars().all(|c| c.is_ascii()));
+        let unicode = StringGen::random_with_mode(5, CharsetMode::Unicode);
+        assert!(unicode.chars().any(|c| !c.is_ascii()));
+    }
+}

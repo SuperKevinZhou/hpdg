@@ -69,8 +69,10 @@ fn random_unicode_string(length_range: LengthRange, rng: &mut impl Rng) -> Strin
     out
 }
 
+/// Random string helpers.
 pub struct StringGen;
 
+/// Configuration for sentence generation.
 #[derive(Clone, Debug)]
 pub struct SentenceConfig {
     pub word_length_range: LengthRange,
@@ -92,6 +94,7 @@ impl Default for SentenceConfig {
     }
 }
 
+/// Configuration for paragraph generation.
 #[derive(Clone, Debug)]
 pub struct ParagraphConfig {
     pub word_count_range: LengthRange,
@@ -122,6 +125,7 @@ impl Default for ParagraphConfig {
 }
 
 impl StringGen {
+    /// Generate a random string from a charset.
     pub fn random(length_range: impl Into<LengthRange>, charset: &str) -> String {
         let mut rng = rand::rng();
         let len = pick_len(length_range.into(), &mut rng);
@@ -137,11 +141,13 @@ impl StringGen {
             .collect()
     }
 
+    /// Generate a random word with an optional charset.
     pub fn random_word(length_range: impl Into<LengthRange>, charset: Option<&str>) -> String {
         let charset = charset.unwrap_or(ALPHABET_SMALL);
         Self::random(length_range, charset)
     }
 
+    /// Generate a random sentence.
     pub fn random_sentence(
         word_count_range: impl Into<LengthRange>,
         config: Option<&SentenceConfig>,
@@ -171,6 +177,7 @@ impl StringGen {
         sentence
     }
 
+    /// Generate a random paragraph.
     pub fn random_paragraph(
         sentence_count_range: impl Into<LengthRange>,
         config: Option<&ParagraphConfig>,
@@ -226,6 +233,7 @@ impl StringGen {
         paragraph
     }
 
+    /// Generate a string that matches a simplified regex.
     pub fn random_regex(pattern: &str, limit: usize) -> String {
         let mut rng = rand::rng();
         let lim = if limit <= 1 { 10 } else { limit };
@@ -354,6 +362,7 @@ impl StringGen {
         out
     }
 
+    /// Choose a random entry from a dictionary.
     pub fn random_from_dict<T: AsRef<str>>(dict: &[T]) -> String {
         if dict.is_empty() {
             return String::new();
@@ -363,6 +372,7 @@ impl StringGen {
         dict[idx].as_ref().to_string()
     }
 
+    /// Build a sentence from dictionary words.
     pub fn random_sentence_from_dict<T: AsRef<str>>(
         word_count_range: impl Into<LengthRange>,
         dict: &[T],
@@ -385,6 +395,7 @@ impl StringGen {
         words.join(separator)
     }
 
+    /// Generate random strings with ASCII or Unicode modes.
     pub fn random_with_mode(
         length_range: impl Into<LengthRange>,
         mode: CharsetMode,

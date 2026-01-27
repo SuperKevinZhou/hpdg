@@ -5,3 +5,4 @@ pub mod math;
 pub mod sequence;
 pub mod vector;
 pub mod string;
+pub mod polygon;

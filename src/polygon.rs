@@ -47,4 +47,53 @@ impl Polygon {
         }
         (sum.abs() as f64) * 0.5
     }
+
+    pub fn convex_hull(points: &[Point]) -> Self {
+        if points.len() <= 1 {
+            return Self::new(points.to_vec());
+        }
+        let mut pts = points.to_vec();
+        pts.sort_by_key(|p| (p.x, p.y));
+
+        fn cross(o: Point, a: Point, b: Point) -> i128 {
+            let ox = o.x as i128;
+            let oy = o.y as i128;
+            let ax = a.x as i128;
+            let ay = a.y as i128;
+            let bx = b.x as i128;
+            let by = b.y as i128;
+            (ax - ox) * (by - oy) - (ay - oy) * (bx - ox)
+        }
+
+        let mut lower: Vec<Point> = Vec::new();
+        for p in &pts {
+            while lower.len() >= 2 {
+                let l = lower.len();
+                if cross(lower[l - 2], lower[l - 1], *p) <= 0 {
+                    lower.pop();
+                } else {
+                    break;
+                }
+            }
+            lower.push(*p);
+        }
+
+        let mut upper: Vec<Point> = Vec::new();
+        for p in pts.iter().rev() {
+            while upper.len() >= 2 {
+                let l = upper.len();
+                if cross(upper[l - 2], upper[l - 1], *p) <= 0 {
+                    upper.pop();
+                } else {
+                    break;
+                }
+            }
+            upper.push(*p);
+        }
+
+        lower.pop();
+        upper.pop();
+        lower.extend(upper);
+        Self::new(lower)
+    }
 }

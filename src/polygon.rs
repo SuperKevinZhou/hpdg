@@ -96,4 +96,24 @@ impl Polygon {
         lower.extend(upper);
         Self::new(lower)
     }
+
+    pub fn simple_polygon(points: &[Point]) -> Self {
+        if points.len() <= 2 {
+            return Self::new(points.to_vec());
+        }
+        let (mut sum_x, mut sum_y) = (0i128, 0i128);
+        for p in points {
+            sum_x += p.x as i128;
+            sum_y += p.y as i128;
+        }
+        let cx = sum_x as f64 / points.len() as f64;
+        let cy = sum_y as f64 / points.len() as f64;
+        let mut pts = points.to_vec();
+        pts.sort_by(|a, b| {
+            let ang_a = (a.y as f64 - cy).atan2(a.x as f64 - cx);
+            let ang_b = (b.y as f64 - cy).atan2(b.x as f64 - cx);
+            ang_a.partial_cmp(&ang_b).unwrap_or(std::cmp::Ordering::Equal)
+        });
+        Self::new(pts)
+    }
 }

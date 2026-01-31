@@ -1,3 +1,5 @@
+use rand::Rng;
+
 ﻿#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Point {
     pub x: i64,
@@ -116,4 +118,15 @@ impl Polygon {
         });
         Self::new(pts)
     }
+}
+
+pub fn random_points(num: usize, x_range: (i64, i64), y_range: (i64, i64)) -> Vec<Point> {
+    let mut rng = rand::rng();
+    let mut points = Vec::with_capacity(num);
+    for _ in 0..num {
+        let x = rng.gen_range(x_range.0..=x_range.1);
+        let y = rng.gen_range(y_range.0..=y_range.1);
+        points.push(Point::new(x, y));
+    }
+    points
 }

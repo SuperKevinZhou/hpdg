@@ -1,4 +1,6 @@
 use rand::Rng;
+use std::fmt;
+
 
 ﻿#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Point {
@@ -129,4 +131,22 @@ pub fn random_points(num: usize, x_range: (i64, i64), y_range: (i64, i64)) -> Ve
         points.push(Point::new(x, y));
     }
     points
+}
+
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.x, self.y)
+    }
+}
+
+impl fmt::Display for Polygon {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, p) in self.points.iter().enumerate() {
+            if i > 0 {
+                writeln!(f)?;
+            }
+            write!(f, "{}", p)?;
+        }
+        Ok(())
+    }
 }

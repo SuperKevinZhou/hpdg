@@ -150,3 +150,63 @@ impl fmt::Display for Polygon {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_area_and_perimeter() {
+        let poly = Polygon::new(vec![
+            Point::new(0, 0),
+            Point::new(4, 0),
+            Point::new(0, 3),
+        ]);
+        assert!((poly.area() - 6.0).abs() < 1e-6);
+        assert!((poly.perimeter() - 12.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_convex_hull() {
+        let points = vec![
+            Point::new(0, 0),
+            Point::new(1, 1),
+            Point::new(0, 1),
+            Point::new(1, 0),
+            Point::new(0, 0),
+        ];
+        let hull = Polygon::convex_hull(&points);
+        assert!(hull.points.len() >= 3);
+    }
+
+    #[test]
+    fn test_simple_polygon() {
+        let points = vec![
+            Point::new(0, 0),
+            Point::new(2, 0),
+            Point::new(2, 2),
+            Point::new(0, 2),
+        ];
+        let poly = Polygon::simple_polygon(&points);
+        assert_eq!(poly.points.len(), 4);
+    }
+
+    #[test]
+    fn test_random_points_bounds() {
+        let pts = random_points(5, (0, 2), (-1, 1));
+        assert_eq!(pts.len(), 5);
+        for p in pts {
+            assert!(p.x >= 0 && p.x <= 2);
+            assert!(p.y >= -1 && p.y <= 1);
+        }
+    }
+
+    #[test]
+    fn test_display_formats() {
+        let p = Point::new(1, 2);
+        assert_eq!(p.to_string(), "1 2");
+        let poly = Polygon::new(vec![Point::new(0, 0), Point::new(1, 1)]);
+        assert!(poly.to_string().contains("0 0"));
+    }
+}

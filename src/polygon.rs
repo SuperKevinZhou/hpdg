@@ -2,7 +2,8 @@ use rand::Rng;
 use std::fmt;
 
 
-﻿#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+/// 2D point with integer coordinates.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Point {
     pub x: i64,
     pub y: i64,
@@ -14,6 +15,7 @@ impl Point {
     }
 }
 
+/// Polygon represented by an ordered list of vertices.
 #[derive(Clone, Debug, Default)]
 pub struct Polygon {
     pub points: Vec<Point>,
@@ -24,6 +26,7 @@ impl Polygon {
         Self { points }
     }
 
+    /// Perimeter length of the polygon.
     pub fn perimeter(&self) -> f64 {
         if self.points.len() < 2 {
             return 0.0;
@@ -39,6 +42,7 @@ impl Polygon {
         sum
     }
 
+    /// Area of the polygon using the shoelace formula.
     pub fn area(&self) -> f64 {
         if self.points.len() < 3 {
             return 0.0;
@@ -52,6 +56,7 @@ impl Polygon {
         (sum.abs() as f64) * 0.5
     }
 
+    /// Compute the convex hull (monotonic chain).
     pub fn convex_hull(points: &[Point]) -> Self {
         if points.len() <= 1 {
             return Self::new(points.to_vec());
@@ -101,6 +106,7 @@ impl Polygon {
         Self::new(lower)
     }
 
+    /// Build a simple polygon by angular sorting.
     pub fn simple_polygon(points: &[Point]) -> Self {
         if points.len() <= 2 {
             return Self::new(points.to_vec());
@@ -122,6 +128,7 @@ impl Polygon {
     }
 }
 
+/// Generate random points within given bounds.
 pub fn random_points(num: usize, x_range: (i64, i64), y_range: (i64, i64)) -> Vec<Point> {
     let mut rng = rand::rng();
     let mut points = Vec::with_capacity(num);

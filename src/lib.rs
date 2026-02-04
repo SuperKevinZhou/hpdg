@@ -6,3 +6,4 @@ pub mod sequence;
 pub mod vector;
 pub mod string;
 pub mod polygon;
+pub mod query;

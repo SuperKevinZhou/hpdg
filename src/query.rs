@@ -123,3 +123,43 @@ impl RangeQuery<()> {
         ret
     }
 }
+
+impl<W> RangeQuery<W> {
+    pub fn get_one_query_with_weight<F>(
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        weight_generator: &F,
+        index: usize,
+    ) -> (Vec<i64>, Vec<i64>, W)
+    where
+        F: Fn(usize, &[i64], &[i64]) -> W,
+    {
+        let (l, r, ()) = RangeQuery::<()>::get_one_query(position_range, mode, big_query);
+        let w = weight_generator(index, &l, &r);
+        (l, r, w)
+    }
+
+    pub fn random_with_weight<F>(
+        num: usize,
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        weight_generator: F,
+    ) -> Self
+    where
+        F: Fn(usize, &[i64], &[i64]) -> W,
+    {
+        let mut ret = Self::new();
+        for i in 0..num {
+            ret.result.push(Self::get_one_query_with_weight(
+                position_range,
+                mode,
+                big_query,
+                &weight_generator,
+                i + 1,
+            ));
+        }
+        ret
+    }
+}

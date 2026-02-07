@@ -7,6 +7,40 @@ pub enum RangeQueryRandomMode {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QueryOp {
+    Update,
+    Query,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MixedRangeQuery {
+    pub result: Vec<(QueryOp, Vec<i64>, Vec<i64>)>,
+}
+
+impl MixedRangeQuery {
+    pub fn random(
+        num: usize,
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        update_ratio: f64,
+    ) -> Self {
+        let mut rng = rand::rng();
+        let mut ret = Self::default();
+        for _ in 0..num {
+            let op = if rng.gen::<f64>() < update_ratio {
+                QueryOp::Update
+            } else {
+                QueryOp::Query
+            };
+            let (l, r, ()) = RangeQuery::<()>::get_one_query(position_range, mode, big_query);
+            ret.result.push((op, l, r));
+        }
+        ret
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RangeLimit {
     Max(i64),
     MinMax(i64, i64),

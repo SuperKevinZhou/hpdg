@@ -17,6 +17,21 @@ pub struct MixedRangeQuery {
     pub result: Vec<(QueryOp, Vec<i64>, Vec<i64>)>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct RangeQueryConstraints {
+    pub min_len: Option<i64>,
+    pub max_len: Option<i64>,
+}
+
+impl Default for RangeQueryConstraints {
+    fn default() -> Self {
+        Self {
+            min_len: None,
+            max_len: None,
+        }
+    }
+}
+
 impl MixedRangeQuery {
     pub fn random(
         num: usize,
@@ -153,6 +168,63 @@ impl RangeQuery<()> {
         let mut ret = Self::new();
         for _ in 0..num {
             ret.result.push(Self::get_one_query(position_range, mode, big_query));
+        }
+        ret
+    }
+
+    pub fn get_one_query_with_constraints(
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        constraints: RangeQueryConstraints,
+    ) -> (Vec<i64>, Vec<i64>, ()) {
+        let ranges = normalize_ranges(position_range);
+        let mut rng = rand::rng();
+        let mut query_l = Vec::with_capacity(ranges.len());
+        let mut query_r = Vec::with_capacity(ranges.len());
+
+        for (low, high) in ranges {
+            assert!(high >= low, "upper-bound should be larger than lower-bound");
+            let range_len = high - low + 1;
+            let mut min_len = constraints.min_len.unwrap_or(1);
+            let mut max_len = constraints.max_len.unwrap_or(range_len);
+            if mode == RangeQueryRandomMode::Less {
+                min_len = min_len.max(2);
+            }
+            max_len = max_len.min(range_len);
+            assert!(min_len <= max_len, "invalid length constraints");
+
+            let (len_min, len_max) = if rng.gen::<f64>() < big_query {
+                let lb = (range_len / 2).max(min_len);
+                (lb, max_len)
+            } else {
+                (min_len, max_len)
+            };
+            let ql = rng.gen_range(len_min..=len_max);
+            let l = rng.gen_range(low..=high - ql + 1);
+            let r = l + ql - 1;
+
+            query_l.push(l);
+            query_r.push(r);
+        }
+        (query_l, query_r, ())
+    }
+
+    pub fn random_with_constraints(
+        num: usize,
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        constraints: RangeQueryConstraints,
+    ) -> Self {
+        let mut ret = Self::new();
+        for _ in 0..num {
+            ret.result.push(Self::get_one_query_with_constraints(
+                position_range,
+                mode,
+                big_query,
+                constraints,
+            ));
         }
         ret
     }

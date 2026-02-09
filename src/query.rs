@@ -53,6 +53,19 @@ impl MixedRangeQuery {
         }
         ret
     }
+
+    pub fn to_string(&self) -> String {
+        let mut lines = Vec::with_capacity(self.result.len());
+        for (op, l, r) in &self.result {
+            let tag = match op {
+                QueryOp::Update => "U",
+                QueryOp::Query => "Q",
+            };
+            lines.push(format!("{} {} {}", tag, join_vec(l), join_vec(r)));
+        }
+        lines.join("
+")
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,6 +104,14 @@ fn normalize_ranges(position_range: &[RangeLimit]) -> Vec<(i64, i64)> {
             RangeLimit::MinMax(l, r) => (l, r),
         })
         .collect()
+}
+
+fn join_vec(values: &[i64]) -> String {
+    values
+        .iter()
+        .map(|v| v.to_string())
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 impl<W> RangeQuery<W> {
@@ -267,5 +288,16 @@ impl<W> RangeQuery<W> {
             ));
         }
         ret
+    }
+}
+
+impl<W: std::fmt::Display> RangeQuery<W> {
+    pub fn to_string_with_weight(&self) -> String {
+        let mut lines = Vec::with_capacity(self.result.len());
+        for (l, r, w) in &self.result {
+            lines.push(format!("{} {} {}", join_vec(l), join_vec(r), w));
+        }
+        lines.join("
+")
     }
 }

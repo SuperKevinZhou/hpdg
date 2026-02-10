@@ -301,3 +301,59 @@ impl<W: std::fmt::Display> RangeQuery<W> {
 ")
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_basic_queries() {
+        let q = RangeQuery::random(5, &[RangeLimit::MinMax(1, 5)], RangeQueryRandomMode::AllowEqual, 0.0);
+        assert_eq!(q.len(), 5);
+        for (l, r, ()) in q.result {
+            assert!(l[0] <= r[0]);
+        }
+    }
+
+    #[test]
+    fn test_random_with_weight() {
+        let q = RangeQuery::random_with_weight(
+            3,
+            &[RangeLimit::MinMax(1, 4)],
+            RangeQueryRandomMode::AllowEqual,
+            0.0,
+            |idx, _l, _r| idx as i64,
+        );
+        assert_eq!(q.len(), 3);
+        assert_eq!(q.result[0].2, 1);
+    }
+
+    #[test]
+    fn test_constraints() {
+        let constraints = RangeQueryConstraints { min_len: Some(3), max_len: Some(3) };
+        let q = RangeQuery::random_with_constraints(
+            2,
+            &[RangeLimit::MinMax(1, 5)],
+            RangeQueryRandomMode::AllowEqual,
+            0.0,
+            constraints,
+        );
+        for (l, r, ()) in q.result {
+            assert_eq!(r[0] - l[0] + 1, 3);
+        }
+    }
+
+    #[test]
+    fn test_mixed_queries_output() {
+        let mixed = MixedRangeQuery::random(
+            2,
+            &[RangeLimit::MinMax(1, 3)],
+            RangeQueryRandomMode::AllowEqual,
+            0.0,
+            0.5,
+        );
+        let out = mixed.to_string();
+        assert_eq!(out.lines().count(), 2);
+    }
+}

@@ -1,23 +1,27 @@
 use rand::Rng;
 
 ﻿#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Random endpoint generation policy for range queries.
 pub enum RangeQueryRandomMode {
     Less,
     AllowEqual,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Operation type for mixed queries.
 pub enum QueryOp {
     Update,
     Query,
 }
 
 #[derive(Debug, Clone, Default)]
+/// Mixed update/query sequence.
 pub struct MixedRangeQuery {
     pub result: Vec<(QueryOp, Vec<i64>, Vec<i64>)>,
 }
 
 #[derive(Debug, Clone, Copy)]
+/// Constraints for query lengths.
 pub struct RangeQueryConstraints {
     pub min_len: Option<i64>,
     pub max_len: Option<i64>,
@@ -33,6 +37,7 @@ impl Default for RangeQueryConstraints {
 }
 
 impl MixedRangeQuery {
+    /// Generate random queries.
     pub fn random(
         num: usize,
         position_range: &[RangeLimit],
@@ -54,6 +59,7 @@ impl MixedRangeQuery {
         ret
     }
 
+    /// Convert queries to output string.
     pub fn to_string(&self) -> String {
         let mut lines = Vec::with_capacity(self.result.len());
         for (op, l, r) in &self.result {
@@ -69,6 +75,7 @@ impl MixedRangeQuery {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Per-dimension range limit for queries.
 pub enum RangeLimit {
     Max(i64),
     MinMax(i64, i64),
@@ -231,6 +238,7 @@ impl RangeQuery<()> {
         (query_l, query_r, ())
     }
 
+    /// Generate random queries with length constraints.
     pub fn random_with_constraints(
         num: usize,
         position_range: &[RangeLimit],
@@ -267,6 +275,7 @@ impl<W> RangeQuery<W> {
         (l, r, w)
     }
 
+    /// Generate random weighted queries.
     pub fn random_with_weight<F>(
         num: usize,
         position_range: &[RangeLimit],

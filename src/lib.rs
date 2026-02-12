@@ -7,3 +7,4 @@ pub mod vector;
 pub mod string;
 pub mod polygon;
 pub mod query;
+pub mod compare;

@@ -25,6 +25,26 @@ impl fmt::Display for CompareMismatch {
 
 impl Error for CompareMismatch {}
 
+pub trait Grader {
+    fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch>;
+}
+
+pub struct DefaultGrader;
+
+impl Grader for DefaultGrader {
+    fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch> {
+        compare_strings(expected, actual)
+    }
+}
+
+pub fn compare_with_grader<G: Grader>(
+    expected: &str,
+    actual: &str,
+    grader: &G,
+) -> Result<(), CompareMismatch> {
+    grader.grade(expected, actual)
+}
+
 pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismatch> {
     let exp_lines: Vec<&str> = expected.lines().collect();
     let act_lines: Vec<&str> = actual.lines().collect();
@@ -76,4 +96,17 @@ pub fn compare_programs(
     let actual_out = run_program(actual_cmd, input)
         .unwrap_or_else(|e| format!("<<error>> {}", e));
     compare_strings(&expected_out, &actual_out)
+}
+
+pub fn compare_programs_with_grader<G: Grader>(
+    expected_cmd: &[&str],
+    actual_cmd: &[&str],
+    input: &str,
+    grader: &G,
+) -> Result<(), CompareMismatch> {
+    let expected_out = run_program(expected_cmd, input)
+        .unwrap_or_else(|e| format!("<<error>> {}", e));
+    let actual_out = run_program(actual_cmd, input)
+        .unwrap_or_else(|e| format!("<<error>> {}", e));
+    grader.grade(&expected_out, &actual_out)
 }

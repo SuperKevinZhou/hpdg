@@ -3,6 +3,9 @@ use std::fmt;
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::thread;
+
 
 
 
@@ -109,4 +112,33 @@ pub fn compare_programs_with_grader<G: Grader>(
     let actual_out = run_program(actual_cmd, input)
         .unwrap_or_else(|e| format!("<<error>> {}", e));
     grader.grade(&expected_out, &actual_out)
+}
+
+pub fn compare_strings_parallel(pairs: &[(String, String)], threads: usize) -> Result<(), CompareMismatch> {
+    if pairs.is_empty() {
+        return Ok(());
+    }
+    let worker_count = threads.max(1);
+    let chunk_size = (pairs.len() + worker_count - 1) / worker_count;
+    let (tx, rx) = mpsc::channel();
+    for chunk in pairs.chunks(chunk_size) {
+        let tx = tx.clone();
+        let local = chunk.to_vec();
+        thread::spawn(move || {
+            for (expected, actual) in local {
+                if let Err(err) = compare_strings(&expected, &actual) {
+                    let _ = tx.send(Err(err));
+                    return;
+                }
+            }
+            let _ = tx.send(Ok(()));
+        });
+    }
+    drop(tx);
+    for msg in rx {
+        if let Err(err) = msg {
+            return Err(err);
+        }
+    }
+    Ok(())
 }

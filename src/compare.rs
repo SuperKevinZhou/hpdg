@@ -40,6 +40,14 @@ impl Grader for DefaultGrader {
     }
 }
 
+pub struct WhitespaceInsensitiveGrader;
+
+impl Grader for WhitespaceInsensitiveGrader {
+    fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch> {
+        compare_strings_normalized(expected, actual)
+    }
+}
+
 pub fn compare_with_grader<G: Grader>(
     expected: &str,
     actual: &str,

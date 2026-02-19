@@ -150,3 +150,32 @@ pub fn compare_strings_parallel(pairs: &[(String, String)], threads: usize) -> R
     }
     Ok(())
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compare_strings() {
+        assert!(compare_strings("a\nb", "a\nb").is_ok());
+        assert!(compare_strings("a", "b").is_err());
+    }
+
+    #[test]
+    fn test_compare_strings_normalized() {
+        assert!(compare_strings_normalized("a  b", "a b").is_ok());
+    }
+
+    #[test]
+    fn test_compare_strings_parallel() {
+        let pairs = vec![("ok".to_string(), "ok".to_string())];
+        assert!(compare_strings_parallel(&pairs, 2).is_ok());
+    }
+
+    #[test]
+    fn test_custom_grader() {
+        let grader = WhitespaceInsensitiveGrader;
+        assert!(compare_with_grader("a  b", "a b", &grader).is_ok());
+    }
+}

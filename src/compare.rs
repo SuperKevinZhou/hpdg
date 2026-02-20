@@ -10,6 +10,7 @@ use std::thread;
 
 
 #[derive(Debug, Clone)]
+/// Describes a mismatch between expected and actual output.
 pub struct CompareMismatch {
     pub line: usize,
     pub expected: String,
@@ -28,10 +29,12 @@ impl fmt::Display for CompareMismatch {
 
 impl Error for CompareMismatch {}
 
+/// Custom output grader interface.
 pub trait Grader {
     fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch>;
 }
 
+/// Default grader using strict comparison.
 pub struct DefaultGrader;
 
 impl Grader for DefaultGrader {
@@ -40,6 +43,7 @@ impl Grader for DefaultGrader {
     }
 }
 
+/// Grader that ignores whitespace differences.
 pub struct WhitespaceInsensitiveGrader;
 
 impl Grader for WhitespaceInsensitiveGrader {
@@ -56,6 +60,7 @@ pub fn compare_with_grader<G: Grader>(
     grader.grade(expected, actual)
 }
 
+/// Compare two strings line by line.
 pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismatch> {
     let exp_lines: Vec<&str> = expected.lines().collect();
     let act_lines: Vec<&str> = actual.lines().collect();
@@ -74,6 +79,7 @@ pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismat
     Ok(())
 }
 
+/// Compare two files line by line.
 pub fn compare_files(expected_path: &str, actual_path: &str) -> Result<(), CompareMismatch> {
     let expected = fs::read_to_string(expected_path).unwrap_or_default();
     let actual = fs::read_to_string(actual_path).unwrap_or_default();
@@ -97,6 +103,7 @@ fn run_program(cmd: &[&str], input: &str) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Run two programs and compare their outputs.
 pub fn compare_programs(
     expected_cmd: &[&str],
     actual_cmd: &[&str],
@@ -109,6 +116,7 @@ pub fn compare_programs(
     compare_strings(&expected_out, &actual_out)
 }
 
+/// Run two programs and compare outputs with a custom grader.
 pub fn compare_programs_with_grader<G: Grader>(
     expected_cmd: &[&str],
     actual_cmd: &[&str],
@@ -122,6 +130,7 @@ pub fn compare_programs_with_grader<G: Grader>(
     grader.grade(&expected_out, &actual_out)
 }
 
+/// Compare multiple string pairs in parallel.
 pub fn compare_strings_parallel(pairs: &[(String, String)], threads: usize) -> Result<(), CompareMismatch> {
     if pairs.is_empty() {
         return Ok(());

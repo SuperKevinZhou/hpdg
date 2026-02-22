@@ -32,3 +32,15 @@ impl IntLike for usize {}
 pub fn int_like<T: IntLike>(_data: &T) -> bool {
     true
 }
+
+pub fn strtolines(input: &str) -> Vec<String> {
+    let mut lines: Vec<String> = input.lines().map(|l| l.trim_end().to_string()).collect();
+    while lines.last().map(|s| s.is_empty()).unwrap_or(false) {
+        lines.pop();
+    }
+    lines
+}
+
+pub fn make_unicode<T: ToString>(data: T) -> String {
+    data.to_string()
+}

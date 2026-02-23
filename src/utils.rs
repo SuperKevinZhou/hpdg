@@ -44,3 +44,45 @@ pub fn strtolines(input: &str) -> Vec<String> {
 pub fn make_unicode<T: ToString>(data: T) -> String {
     data.to_string()
 }
+
+use std::collections::HashMap;
+
+pub enum ArgSpec<T> {
+    Required(&'static str),
+    Optional(&'static str, T),
+}
+
+pub fn unpack_kwargs<T: Clone>(
+    funcname: &str,
+    kwargs: &HashMap<String, T>,
+    arg_pattern: &[ArgSpec<T>],
+) -> Result<HashMap<String, T>, String> {
+    let mut remaining = kwargs.clone();
+    let mut result: HashMap<String, T> = HashMap::new();
+
+    for spec in arg_pattern {
+        match spec {
+            ArgSpec::Required(key) => {
+                if let Some(val) = remaining.remove(*key) {
+                    result.insert((*key).to_string(), val);
+                } else {
+                    return Err(format!(
+                        "{funcname}() missing 1 required keyword-only argument: '{key}'"
+                    ));
+                }
+            }
+            ArgSpec::Optional(key, default) => {
+                let val = remaining.remove(*key).unwrap_or_else(|| default.clone());
+                result.insert((*key).to_string(), val);
+            }
+        }
+    }
+
+    if let Some((k, _)) = remaining.iter().next() {
+        return Err(format!(
+            "{funcname}() got an unexpected keyword argument '{k}'"
+        ));
+    }
+
+    Ok(result)
+}

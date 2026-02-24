@@ -46,6 +46,7 @@ pub fn make_unicode<T: ToString>(data: T) -> String {
 }
 
 use std::collections::HashMap;
+use std::env;
 
 pub enum ArgSpec<T> {
     Required(&'static str),
@@ -85,4 +86,15 @@ pub fn unpack_kwargs<T: Clone>(
     }
 
     Ok(result)
+}
+
+pub fn process_args() -> Option<u64> {
+    for arg in env::args() {
+        if let Some(seed) = arg.strip_prefix("--randseed=") {
+            if let Ok(v) = seed.parse::<u64>() {
+                return Some(v);
+            }
+        }
+    }
+    None
 }

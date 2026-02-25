@@ -98,3 +98,11 @@ pub fn process_args() -> Option<u64> {
     }
     None
 }
+
+pub fn escape_path(path: &str) -> String {
+    if cfg!(windows) {
+        format!("\"{}\"", path.replace('\\', "/"))
+    } else {
+        format!("'{}'", path.replace('\'', "\\'"))
+    }
+}

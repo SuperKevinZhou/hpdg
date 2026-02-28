@@ -15,3 +15,10 @@ impl From<usize> for EdgeId {
         EdgeId(value)
     }
 }
+
+pub trait Weight: Copy + Clone + Default + std::fmt::Debug + std::fmt::Display + PartialOrd {}
+
+impl<T> Weight for T where
+    T: Copy + Clone + Default + std::fmt::Debug + std::fmt::Display + PartialOrd
+{
+}

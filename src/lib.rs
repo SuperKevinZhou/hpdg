@@ -10,3 +10,4 @@ pub mod query;
 pub mod compare;
 pub mod utils;
 pub mod core;
+pub mod rng;

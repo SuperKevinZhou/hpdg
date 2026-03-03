@@ -757,6 +757,17 @@ impl IO {
     }
 }
 
+/// Streaming writer interface for incremental output.
+pub trait StreamingWriter {
+    fn write_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()>;
+    fn writeln_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()>;
+    fn write_sep<I, T>(&mut self, items: I, sep: &str) -> std::io::Result<()>
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display;
+    fn flush(&mut self) -> std::io::Result<()>;
+}
+
 /// A streaming writer to avoid buffering the whole output in memory.
 pub struct IOStream {
     writer: std::io::BufWriter<std::fs::File>,
@@ -792,6 +803,28 @@ impl IOStream {
     pub fn flush(&mut self) -> std::io::Result<()> {
         use std::io::Write;
         self.writer.flush()
+    }
+}
+
+impl StreamingWriter for IOStream {
+    fn write_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
+        self.write(s)
+    }
+
+    fn writeln_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
+        self.writeln(s)
+    }
+
+    fn write_sep<I, T>(&mut self, items: I, sep: &str) -> std::io::Result<()>
+    where
+        I: IntoIterator<Item = T>,
+        T: std::fmt::Display,
+    {
+        self.write_sep(items, sep)
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.flush()
     }
 }
 

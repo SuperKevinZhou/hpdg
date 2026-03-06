@@ -12,3 +12,4 @@ pub mod utils;
 pub mod core;
 pub mod rng;
 pub mod traits;
+pub mod error;

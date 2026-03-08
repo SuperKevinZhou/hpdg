@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 thiserror = "1.0.69"
 rand = "0.9.2"
+getrandom = { version = "0.2", features = ["js"] }
 
 [features]
 default = ["proc", "parallel", "io", "testcase", "graph", "math", "sequence", "vector", "string", "polygon", "query", "compare", "utils", "core", "rng", "traits", "error"]

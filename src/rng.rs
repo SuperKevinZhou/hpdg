@@ -1,5 +1,6 @@
 ﻿use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use getrandom;
 
 pub struct SeededRng {
     rng: StdRng,
@@ -54,4 +55,16 @@ impl RngStream {
         self.counter = self.counter.wrapping_add(1);
         SeededRng::new(seed)
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn random_u64() -> u64 {
+    let mut buf = [0u8; 8];
+    let _ = getrandom::getrandom(&mut buf);
+    u64::from_le_bytes(buf)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn random_u64() -> u64 {
+    rand::random()
 }

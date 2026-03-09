@@ -7,6 +7,7 @@ edition = "2024"
 thiserror = "1.0.69"
 rand = "0.9.2"
 getrandom = { version = "0.2", features = ["js"] }
+pyo3 = { version = "0.21", optional = true, features = ["extension-module"] }
 
 [features]
 default = ["proc", "parallel", "io", "testcase", "graph", "math", "sequence", "vector", "string", "polygon", "query", "compare", "utils", "core", "rng", "traits", "error"]
@@ -27,3 +28,4 @@ core = []
 rng = []
 traits = []
 error = []
+python-bindings = ["pyo3"]

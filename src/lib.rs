@@ -28,3 +28,5 @@ pub mod rng;
 pub mod traits;
 #[cfg(feature = "error")]
 pub mod error;
+#[cfg(feature = "c-bindings")]
+pub mod c_api;

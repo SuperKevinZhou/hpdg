@@ -30,3 +30,10 @@ traits = []
 error = []
 python-bindings = ["pyo3"]
 c-bindings = []
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "basic"
+harness = false

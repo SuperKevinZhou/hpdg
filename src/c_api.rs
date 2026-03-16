@@ -2,7 +2,7 @@
 use std::os::raw::c_char;
 
 #[cfg(feature = "c-bindings")]
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn hpdg_version() -> *const c_char {
     std::ptr::null()
 }

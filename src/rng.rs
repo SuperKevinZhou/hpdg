@@ -1,6 +1,5 @@
 ﻿use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use getrandom;
 
 pub struct SeededRng {
     rng: StdRng,
@@ -27,9 +26,9 @@ impl SeededRng {
 
     pub fn gen_range<T>(&mut self, range: std::ops::RangeInclusive<T>) -> T
     where
-        T: rand::distr::uniform::SampleUniform + Copy,
+        T: rand::distr::uniform::SampleUniform + Copy + PartialOrd,
     {
-        self.rng.gen_range(range)
+        self.rng.random_range(range)
     }
 }
 

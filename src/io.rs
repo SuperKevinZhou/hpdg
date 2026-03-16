@@ -286,9 +286,9 @@ impl IO {
     }
 
     fn normalize_path(path: &str) -> String {
-        let sep = std::path::MAIN_SEPARATOR;
+        let sep = std::path::MAIN_SEPARATOR.to_string();
         let mut buf = path.trim().to_string();
-        buf = buf.replace(['/', '\\'], sep);
+        buf = buf.replace(['/', '\\'], &sep);
         buf
     }
 }

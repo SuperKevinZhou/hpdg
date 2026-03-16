@@ -1,4 +1,4 @@
-﻿use rand::Rng;
+use rand::Rng;
 use std::collections::HashSet;
 
 /// Modes for random vector generation.
@@ -134,7 +134,7 @@ impl Vector {
         for _ in 0..num {
             let mut vec = Vec::with_capacity(ranges.len());
             for (&offset, &length) in offsets.iter().zip(lengths.iter()) {
-                let val = rng.gen_range(offset..=offset + length);
+                let val = rng.random_range(offset..=offset + length);
                 vec.push(val);
             }
             result.push(vec);
@@ -153,7 +153,7 @@ impl Vector {
         let mut used: HashSet<u128> = HashSet::with_capacity(num * 2 + 1);
         let mut result: IntVector = Vec::with_capacity(num);
         while result.len() < num {
-            let rand_idx = rng.gen_range(0..space);
+            let rand_idx = rng.random_range(0..space);
             if used.insert(rand_idx) {
                 let mut vec = get_vector_from_index(&lengths, rand_idx);
                 for (v, offset) in vec.iter_mut().zip(offsets.iter()) {
@@ -180,7 +180,7 @@ impl Vector {
         for _ in 0..num {
             let mut vec = Vec::with_capacity(ranges.len());
             for (&offset, &length) in offsets.iter().zip(lengths.iter()) {
-                let val = rng.gen_range(offset..=offset + length);
+                let val = rng.random_range(offset..=offset + length);
                 vec.push(val);
             }
             result.push(vec);

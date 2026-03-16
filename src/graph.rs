@@ -77,12 +77,6 @@ impl From<(usize, usize, i64)> for Edge {
     }
 }
 
-impl Into<Edge> for (usize, usize) {
-    fn into(self) -> Edge {
-        Edge { u: self.0, v: self.1, w: 0, weighted: false }
-    }
-}
-
 impl From<(u64, u64)> for Edge {
     fn from(value: (u64, u64)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
@@ -92,17 +86,6 @@ impl From<(u64, u64)> for Edge {
 impl From<(u64, u64, i64)> for Edge {
     fn from(value: (u64, u64, i64)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
-    }
-}
-
-impl Into<Edge> for (u64, u64) {
-    fn into(self) -> Edge {
-        Edge {
-            u: self.0 as usize,
-            v: self.1 as usize,
-            w: 0,
-            weighted: false
-        }
     }
 }
 
@@ -118,18 +101,6 @@ impl From<(u32, u32, i64)> for Edge {
     }
 }
 
-
-impl Into<Edge> for (u32, u32) {
-    fn into(self) -> Edge {
-        Edge {
-            u: self.0 as usize,
-            v: self.1 as usize,
-            w: 0,
-            weighted: false,
-        }
-    }
-}
-
 impl From<(isize, isize)> for Edge {
     fn from(value: (isize, isize)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
@@ -139,17 +110,6 @@ impl From<(isize, isize)> for Edge {
 impl From<(isize, isize, i64)> for Edge {
     fn from(value: (isize, isize, i64)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
-    }
-}
-
-impl Into<Edge> for (isize, isize) {
-    fn into(self) -> Edge {
-        Edge {
-            u: self.0 as usize,
-            v: self.1 as usize,
-            w: 0,
-            weighted: false,
-        }
     }
 }
 
@@ -165,17 +125,6 @@ impl From<(i64, i64, i64)> for Edge {
     }
 }
 
-impl Into<Edge> for (i64, i64) {
-    fn into(self) -> Edge {
-        Edge {
-            u: self.0 as usize,
-            v: self.1 as usize,
-            w: 0,
-            weighted: false,
-        }
-    }
-}
-
 impl From<(i32, i32)> for Edge {
     fn from(value: (i32, i32)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
@@ -185,17 +134,6 @@ impl From<(i32, i32)> for Edge {
 impl From<(i32, i32, i64)> for Edge {
     fn from(value: (i32, i32, i64)) -> Self {
         Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
-    }
-}
-
-impl Into<Edge> for (i32, i32) {
-    fn into(self) -> Edge {
-        Edge {
-            u: self.0 as usize,
-            v: self.1 as usize,
-            w: 0,
-            weighted: false,
-        }
     }
 }
 
@@ -606,10 +544,6 @@ impl Graph {
         self.edges.len()
     }
 
-    pub fn is_directed(&self) -> bool {
-        self.directed
-    }
-
     pub fn is_valid(&self) -> bool {
         let nodes: std::collections::HashSet<usize> = self.edges.keys().cloned().collect();
         for edge in self.iter_edges_all() {
@@ -873,7 +807,7 @@ impl Graph {
 
     pub fn to_string_with<F>(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: F) -> String
     where
-        F: Fn(&Edge) -> String,
+        F: Fn(&Edge) -> String + 'static,
     {
         self.to_string(shuffle, line_reserve, Some(Box::new(edge_display_function)))
     }
@@ -887,7 +821,7 @@ impl Graph {
 
     pub fn shuffle_labels(&self) -> Graph {
         let mut rng = rng();
-        let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
+        let nodes: Vec<usize> = self.edges.keys().cloned().collect();
         let mut new_nodes = nodes.clone();
         new_nodes.shuffle(&mut rng);
 

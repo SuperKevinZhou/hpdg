@@ -1,81 +1,34 @@
 use rand::Rng;
 
-﻿#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Random endpoint generation policy for range queries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RangeQueryRandomMode {
     Less,
     AllowEqual,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Operation type for mixed queries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueryOp {
     Update,
     Query,
 }
 
-#[derive(Debug, Clone, Default)]
 /// Mixed update/query sequence.
+#[derive(Debug, Clone, Default)]
 pub struct MixedRangeQuery {
     pub result: Vec<(QueryOp, Vec<i64>, Vec<i64>)>,
 }
 
-#[derive(Debug, Clone, Copy)]
 /// Constraints for query lengths.
+#[derive(Debug, Clone, Copy, Default)]
 pub struct RangeQueryConstraints {
     pub min_len: Option<i64>,
     pub max_len: Option<i64>,
 }
 
-impl Default for RangeQueryConstraints {
-    fn default() -> Self {
-        Self {
-            min_len: None,
-            max_len: None,
-        }
-    }
-}
-
-impl MixedRangeQuery {
-    /// Generate random queries.
-    pub fn random(
-        num: usize,
-        position_range: &[RangeLimit],
-        mode: RangeQueryRandomMode,
-        big_query: f64,
-        update_ratio: f64,
-    ) -> Self {
-        let mut rng = rand::rng();
-        let mut ret = Self::default();
-        for _ in 0..num {
-            let op = if rng.gen::<f64>() < update_ratio {
-                QueryOp::Update
-            } else {
-                QueryOp::Query
-            };
-            let (l, r, ()) = RangeQuery::<()>::get_one_query(position_range, mode, big_query);
-            ret.result.push((op, l, r));
-        }
-        ret
-    }
-
-    /// Convert queries to output string.
-    pub fn to_string(&self) -> String {
-        let mut lines = Vec::with_capacity(self.result.len());
-        for (op, l, r) in &self.result {
-            let tag = match op {
-                QueryOp::Update => "U",
-                QueryOp::Query => "Q",
-            };
-            lines.push(format!("{} {} {}", tag, join_vec(l), join_vec(r)));
-        }
-        lines.join("
-")
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// Per-dimension range limit for queries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RangeLimit {
     Max(i64),
     MinMax(i64, i64),
@@ -83,16 +36,17 @@ pub enum RangeLimit {
 
 impl From<i64> for RangeLimit {
     fn from(value: i64) -> Self {
-        RangeLimit::Max(value)
+        Self::Max(value)
     }
 }
 
 impl From<(i64, i64)> for RangeLimit {
     fn from(value: (i64, i64)) -> Self {
-        RangeLimit::MinMax(value.0, value.1)
+        Self::MinMax(value.0, value.1)
     }
 }
 
+/// Container for generated range queries.
 #[derive(Debug, Clone, Default)]
 pub struct RangeQuery<W> {
     pub result: Vec<(Vec<i64>, Vec<i64>, W)>,
@@ -104,9 +58,10 @@ fn normalize_ranges(position_range: &[RangeLimit]) -> Vec<(i64, i64)> {
     } else {
         position_range.to_vec()
     };
+
     ranges
         .into_iter()
-        .map(|r| match r {
+        .map(|range| match range {
             RangeLimit::Max(v) => (1, v),
             RangeLimit::MinMax(l, r) => (l, r),
         })
@@ -119,6 +74,45 @@ fn join_vec(values: &[i64]) -> String {
         .map(|v| v.to_string())
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+impl MixedRangeQuery {
+    /// Generate random mixed update/query operations.
+    pub fn random(
+        num: usize,
+        position_range: &[RangeLimit],
+        mode: RangeQueryRandomMode,
+        big_query: f64,
+        update_ratio: f64,
+    ) -> Self {
+        let mut rng = rand::rng();
+        let mut ret = Self::default();
+
+        for _ in 0..num {
+            let op = if rng.random::<f64>() < update_ratio {
+                QueryOp::Update
+            } else {
+                QueryOp::Query
+            };
+            let (l, r, ()) = RangeQuery::<()>::get_one_query(position_range, mode, big_query);
+            ret.result.push((op, l, r));
+        }
+
+        ret
+    }
+
+    /// Convert mixed queries to output string.
+    pub fn to_string(&self) -> String {
+        let mut lines = Vec::with_capacity(self.result.len());
+        for (op, l, r) in &self.result {
+            let tag = match op {
+                QueryOp::Update => "U",
+                QueryOp::Query => "Q",
+            };
+            lines.push(format!("{} {} {}", tag, join_vec(l), join_vec(r)));
+        }
+        lines.join("\n")
+    }
 }
 
 impl<W> RangeQuery<W> {
@@ -152,27 +146,27 @@ impl RangeQuery<()> {
 
         for (low, high) in ranges {
             assert!(high >= low, "upper-bound should be larger than lower-bound");
-            if mode == RangeQueryRandomMode::Less && low == high {
-                panic!("mode is set to less but upper-bound is equal to lower-bound");
-            }
+            assert!(
+                mode != RangeQueryRandomMode::Less || low != high,
+                "mode is set to less but upper-bound is equal to lower-bound"
+            );
 
-            let (mut l, mut r) = if rng.gen::<f64>() < big_query {
+            let (l, r) = if rng.random::<f64>() < big_query {
                 let len = high - low + 1;
                 let lb = if mode == RangeQueryRandomMode::Less {
                     2.max(len / 2)
                 } else {
                     1.max(len / 2)
                 };
-                let ql = rng.gen_range(lb..=len);
-                let l = rng.gen_range(low..=high - ql + 1);
-                let r = l + ql - 1;
-                (l, r)
+                let ql = rng.random_range(lb..=len);
+                let l = rng.random_range(low..=high - ql + 1);
+                (l, l + ql - 1)
             } else {
-                let mut l = rng.gen_range(low..=high);
-                let mut r = rng.gen_range(low..=high);
+                let mut l = rng.random_range(low..=high);
+                let mut r = rng.random_range(low..=high);
                 while mode == RangeQueryRandomMode::Less && l == r {
-                    l = rng.gen_range(low..=high);
-                    r = rng.gen_range(low..=high);
+                    l = rng.random_range(low..=high);
+                    r = rng.random_range(low..=high);
                 }
                 if l > r {
                     std::mem::swap(&mut l, &mut r);
@@ -187,6 +181,7 @@ impl RangeQuery<()> {
         (query_l, query_r, ())
     }
 
+    /// Generate random queries.
     pub fn random(
         num: usize,
         position_range: &[RangeLimit],
@@ -195,7 +190,8 @@ impl RangeQuery<()> {
     ) -> Self {
         let mut ret = Self::new();
         for _ in 0..num {
-            ret.result.push(Self::get_one_query(position_range, mode, big_query));
+            ret.result
+                .push(Self::get_one_query(position_range, mode, big_query));
         }
         ret
     }
@@ -222,19 +218,19 @@ impl RangeQuery<()> {
             max_len = max_len.min(range_len);
             assert!(min_len <= max_len, "invalid length constraints");
 
-            let (len_min, len_max) = if rng.gen::<f64>() < big_query {
-                let lb = (range_len / 2).max(min_len);
-                (lb, max_len)
+            let (len_min, len_max) = if rng.random::<f64>() < big_query {
+                ((range_len / 2).max(min_len), max_len)
             } else {
                 (min_len, max_len)
             };
-            let ql = rng.gen_range(len_min..=len_max);
-            let l = rng.gen_range(low..=high - ql + 1);
+            let ql = rng.random_range(len_min..=len_max);
+            let l = rng.random_range(low..=high - ql + 1);
             let r = l + ql - 1;
 
             query_l.push(l);
             query_r.push(r);
         }
+
         (query_l, query_r, ())
     }
 
@@ -256,6 +252,15 @@ impl RangeQuery<()> {
             ));
         }
         ret
+    }
+
+    /// Convert unweighted queries to output string.
+    pub fn to_string(&self) -> String {
+        let mut lines = Vec::with_capacity(self.result.len());
+        for (l, r, ()) in &self.result {
+            lines.push(format!("{} {}", join_vec(l), join_vec(r)));
+        }
+        lines.join("\n")
     }
 }
 
@@ -306,11 +311,9 @@ impl<W: std::fmt::Display> RangeQuery<W> {
         for (l, r, w) in &self.result {
             lines.push(format!("{} {} {}", join_vec(l), join_vec(r), w));
         }
-        lines.join("
-")
+        lines.join("\n")
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -318,7 +321,12 @@ mod tests {
 
     #[test]
     fn test_random_basic_queries() {
-        let q = RangeQuery::random(5, &[RangeLimit::MinMax(1, 5)], RangeQueryRandomMode::AllowEqual, 0.0);
+        let q = RangeQuery::random(
+            5,
+            &[RangeLimit::MinMax(1, 5)],
+            RangeQueryRandomMode::AllowEqual,
+            0.0,
+        );
         assert_eq!(q.len(), 5);
         for (l, r, ()) in q.result {
             assert!(l[0] <= r[0]);
@@ -340,7 +348,10 @@ mod tests {
 
     #[test]
     fn test_constraints() {
-        let constraints = RangeQueryConstraints { min_len: Some(3), max_len: Some(3) };
+        let constraints = RangeQueryConstraints {
+            min_len: Some(3),
+            max_len: Some(3),
+        };
         let q = RangeQuery::random_with_constraints(
             2,
             &[RangeLimit::MinMax(1, 5)],

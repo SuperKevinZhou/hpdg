@@ -133,8 +133,8 @@ pub fn random_points(num: usize, x_range: (i64, i64), y_range: (i64, i64)) -> Ve
     let mut rng = rand::rng();
     let mut points = Vec::with_capacity(num);
     for _ in 0..num {
-        let x = rng.gen_range(x_range.0..=x_range.1);
-        let y = rng.gen_range(y_range.0..=y_range.1);
+        let x = rng.random_range(x_range.0..=x_range.1);
+        let y = rng.random_range(y_range.0..=y_range.1);
         points.push(Point::new(x, y));
     }
     points

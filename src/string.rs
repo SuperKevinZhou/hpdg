@@ -1,4 +1,4 @@
-﻿use rand::Rng;
+use rand::Rng;
 
 pub const ALPHABET_SMALL: &str = "abcdefghijklmnopqrstuvwxyz";
 pub const ALPHABET_CAPITAL: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -34,7 +34,7 @@ impl From<(usize, usize)> for LengthRange {
 fn pick_len(range: LengthRange, rng: &mut impl Rng) -> usize {
     match range {
         LengthRange::Exact(len) => len,
-        LengthRange::Range(start, end) => rng.gen_range(start..=end),
+        LengthRange::Range(start, end) => rng.random_range(start..=end),
     }
 }
 
@@ -43,7 +43,7 @@ fn random_char(chars: &str, rng: &mut impl Rng) -> Option<char> {
     if pool.is_empty() {
         return None;
     }
-    Some(pool[rng.gen_range(0..pool.len())])
+    Some(pool[rng.random_range(0..pool.len())])
 }
 
 fn capitalize_first(word: &str) -> String {
@@ -59,7 +59,7 @@ fn random_unicode_string(length_range: LengthRange, rng: &mut impl Rng) -> Strin
     let mut out = String::new();
     for _ in 0..len {
         loop {
-            let code = rng.gen_range(0x4E00u32..=0x9FFFu32);
+            let code = rng.random_range(0x4E00u32..=0x9FFFu32);
             if let Some(ch) = char::from_u32(code) {
                 out.push(ch);
                 break;
@@ -135,7 +135,7 @@ impl StringGen {
         }
         (0..len)
             .map(|_| {
-                let idx = rng.gen_range(0..chars.len());
+                let idx = rng.random_range(0..chars.len());
                 chars[idx]
             })
             .collect()
@@ -206,7 +206,7 @@ impl StringGen {
                 sentence = capitalize_first(&sentence);
             }
 
-            let sep_or_term: f64 = rng.gen();
+            let sep_or_term: f64 = rng.random();
             if sep_or_term < cfg.termination_percentage || i + 1 == sentence_count {
                 if let Some(term) = random_char(&cfg.sentence_terminators, &mut rng) {
                     sentence.push(term);
@@ -353,9 +353,9 @@ impl StringGen {
                 }
             }
 
-            let count = if min == max { min } else { rng.gen_range(min..=max) };
+            let count = if min == max { min } else { rng.random_range(min..=max) };
             for _ in 0..count {
-                let idx = rng.gen_range(0..charset.len());
+                let idx = rng.random_range(0..charset.len());
                 out.push(charset[idx]);
             }
         }
@@ -368,7 +368,7 @@ impl StringGen {
             return String::new();
         }
         let mut rng = rand::rng();
-        let idx = rng.gen_range(0..dict.len());
+        let idx = rng.random_range(0..dict.len());
         dict[idx].as_ref().to_string()
     }
 
@@ -386,7 +386,7 @@ impl StringGen {
         let count = pick_len(word_count_range.into(), &mut rng);
         let mut words: Vec<String> = Vec::with_capacity(count);
         for _ in 0..count {
-            let idx = rng.gen_range(0..dict.len());
+            let idx = rng.random_range(0..dict.len());
             words.push(dict[idx].as_ref().to_string());
         }
         if first_letter_uppercase && !words.is_empty() {

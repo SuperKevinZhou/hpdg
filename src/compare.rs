@@ -1,4 +1,4 @@
-﻿use std::error::Error;
+use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::io::Write;
@@ -6,11 +6,8 @@ use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::thread;
 
-
-
-
-#[derive(Debug, Clone)]
 /// Describes a mismatch between expected and actual output.
+#[derive(Debug, Clone)]
 pub struct CompareMismatch {
     pub line: usize,
     pub expected: String,
@@ -21,7 +18,7 @@ impl fmt::Display for CompareMismatch {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Mismatch at line {}: expected `{}', got `{}'",
+            "Mismatch at line {}: expected `{}`, got `{}`",
             self.line, self.expected, self.actual
         )
     }
@@ -52,12 +49,9 @@ impl Grader for WhitespaceInsensitiveGrader {
     }
 }
 
-pub fn compare_with_grader<G: Grader>(
-    expected: &str,
-    actual: &str,
-    grader: &G,
-) -> Result<(), CompareMismatch> {
-    grader.grade(expected, actual)
+/// Normalize whitespace in output.
+pub fn normalize_output(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Compare two strings line by line.
@@ -65,6 +59,7 @@ pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismat
     let exp_lines: Vec<&str> = expected.lines().collect();
     let act_lines: Vec<&str> = actual.lines().collect();
     let max_len = exp_lines.len().max(act_lines.len());
+
     for i in 0..max_len {
         let exp = exp_lines.get(i).copied().unwrap_or("");
         let act = act_lines.get(i).copied().unwrap_or("");
@@ -76,7 +71,25 @@ pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismat
             });
         }
     }
+
     Ok(())
+}
+
+pub fn compare_strings_normalized(
+    expected: &str,
+    actual: &str,
+) -> Result<(), CompareMismatch> {
+    let expected = normalize_output(expected);
+    let actual = normalize_output(actual);
+    compare_strings(&expected, &actual)
+}
+
+pub fn compare_with_grader<G: Grader>(
+    expected: &str,
+    actual: &str,
+    grader: &G,
+) -> Result<(), CompareMismatch> {
+    grader.grade(expected, actual)
 }
 
 /// Compare two files line by line.
@@ -90,15 +103,24 @@ fn run_program(cmd: &[&str], input: &str) -> Result<String, String> {
     if cmd.is_empty() {
         return Err("empty command".to_string());
     }
+
     let mut command = Command::new(cmd[0]);
     if cmd.len() > 1 {
         command.args(&cmd[1..]);
     }
-    let mut child = command.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()
+
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
         .map_err(|e| e.to_string())?;
+
     if let Some(stdin) = child.stdin.as_mut() {
-        stdin.write_all(input.as_bytes()).map_err(|e| e.to_string())?;
+        stdin
+            .write_all(input.as_bytes())
+            .map_err(|e| e.to_string())?;
     }
+
     let output = child.wait_with_output().map_err(|e| e.to_string())?;
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
@@ -109,10 +131,10 @@ pub fn compare_programs(
     actual_cmd: &[&str],
     input: &str,
 ) -> Result<(), CompareMismatch> {
-    let expected_out = run_program(expected_cmd, input)
-        .unwrap_or_else(|e| format!("<<error>> {}", e));
-    let actual_out = run_program(actual_cmd, input)
-        .unwrap_or_else(|e| format!("<<error>> {}", e));
+    let expected_out =
+        run_program(expected_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
+    let actual_out =
+        run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
     compare_strings(&expected_out, &actual_out)
 }
 
@@ -123,21 +145,26 @@ pub fn compare_programs_with_grader<G: Grader>(
     input: &str,
     grader: &G,
 ) -> Result<(), CompareMismatch> {
-    let expected_out = run_program(expected_cmd, input)
-        .unwrap_or_else(|e| format!("<<error>> {}", e));
-    let actual_out = run_program(actual_cmd, input)
-        .unwrap_or_else(|e| format!("<<error>> {}", e));
+    let expected_out =
+        run_program(expected_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
+    let actual_out =
+        run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
     grader.grade(&expected_out, &actual_out)
 }
 
 /// Compare multiple string pairs in parallel.
-pub fn compare_strings_parallel(pairs: &[(String, String)], threads: usize) -> Result<(), CompareMismatch> {
+pub fn compare_strings_parallel(
+    pairs: &[(String, String)],
+    threads: usize,
+) -> Result<(), CompareMismatch> {
     if pairs.is_empty() {
         return Ok(());
     }
+
     let worker_count = threads.max(1);
-    let chunk_size = (pairs.len() + worker_count - 1) / worker_count;
+    let chunk_size = pairs.len().div_ceil(worker_count);
     let (tx, rx) = mpsc::channel();
+
     for chunk in pairs.chunks(chunk_size) {
         let tx = tx.clone();
         let local = chunk.to_vec();
@@ -151,15 +178,16 @@ pub fn compare_strings_parallel(pairs: &[(String, String)], threads: usize) -> R
             let _ = tx.send(Ok(()));
         });
     }
+
     drop(tx);
     for msg in rx {
         if let Err(err) = msg {
             return Err(err);
         }
     }
+
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {

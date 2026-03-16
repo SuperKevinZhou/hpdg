@@ -1,4 +1,4 @@
-﻿use hpdg::graph::Graph;
+use hpdg::graph::Graph;
 use hpdg::io::IO;
 use hpdg::string::{SentenceConfig, StringGen};
 use hpdg::vector::{IntRange, Vector};
@@ -20,7 +20,7 @@ fn main() {
     let sentence = StringGen::random_sentence(6, Some(&cfg));
 
     io.input_writeln("5 2");
-    io.input_writeln(g.to_string());
+    io.input_writeln(format!("{}", g));
     io.input_writeln(vecs.len());
     for v in vecs {
         io.input_writeln(v.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(" "));

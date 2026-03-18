@@ -2,6 +2,13 @@
 name = "hpdg"
 version = "0.1.0"
 edition = "2024"
+description = "Rust-first data generator for competitive programming and OI workflows."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/SuperKevinZhou/hpdg"
+documentation = "https://docs.rs/hpdg"
+keywords = ["oi", "generator", "testdata", "graph", "cyaron"]
+categories = ["algorithms", "development-tools::testing"]
 
 [dependencies]
 thiserror = "1.0.69"

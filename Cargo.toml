@@ -9,6 +9,12 @@ repository = "https://github.com/SuperKevinZhou/hpdg"
 documentation = "https://docs.rs/hpdg"
 keywords = ["oi", "generator", "testdata", "graph", "cyaron"]
 categories = ["algorithms", "development-tools::testing"]
+exclude = [
+  ".github/**",
+  ".gitignore",
+  "notes.txt",
+  "python/**"
+]
 
 [dependencies]
 thiserror = "1.0.69"

@@ -1,6 +1,32 @@
-use std::{collections::{hash_map::Entry, HashMap}, fmt};
-use rand::{distr::{weighted::WeightedIndex, Distribution}, rng, rngs::ThreadRng, seq::SliceRandom, Rng};
+//! Graph containers and random graph generators.
+//!
+//! This module covers both representation and construction. You can build graphs manually,
+//! generate structured families such as trees or DAGs, inspect adjacency representations,
+//! and merge or relabel existing graphs.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::graph::Graph;
+//!
+//! let graph = Graph::chain(5, None, false, None);
+//! assert_eq!(graph.node_count(), 5);
+//! assert_eq!(graph.edge_count(), 4);
+//! ```
 
+use rand::{
+    Rng,
+    distr::{Distribution, weighted::WeightedIndex},
+    rng,
+    rngs::ThreadRng,
+    seq::SliceRandom,
+};
+use std::{
+    collections::{HashMap, hash_map::Entry},
+    fmt,
+};
+
+/// Graph edge with an optional integral weight.
 #[derive(Clone, Debug)]
 pub struct Edge {
     u: usize,
@@ -10,34 +36,46 @@ pub struct Edge {
 }
 
 impl Edge {
+    /// Create a weighted or unweighted edge.
     pub fn new(u: usize, v: usize, w: Option<i64>) -> Edge {
         if let Some(w) = w {
-            Edge { u, v, w, weighted: true }
+            Edge {
+                u,
+                v,
+                w,
+                weighted: true,
+            }
         } else {
-            Edge { u, v, w: 0, weighted: false }
+            Edge {
+                u,
+                v,
+                w: 0,
+                weighted: false,
+            }
         }
     }
 
+    /// Return `true` if this edge stores a weight.
     pub fn is_weighted(&self) -> bool {
         self.weighted
     }
 
+    /// Return the edge weight if the edge is weighted.
     pub fn weight(&self) -> Option<i64> {
-        if self.weighted {
-            Some(self.w)
-        } else {
-            None
-        }
+        if self.weighted { Some(self.w) } else { None }
     }
 
+    /// Format the edge as `u v`.
     pub fn format_unweighted(&self) -> String {
         format!("{} {}", self.u, self.v)
     }
 
+    /// Format the edge as `u v w`.
     pub fn format_weighted(&self) -> String {
         format!("{} {} {}", self.u, self.v, self.w)
     }
 
+    /// Format the edge using weighted or unweighted output automatically.
     pub fn format_default(&self) -> String {
         if self.weighted {
             self.format_weighted()
@@ -67,73 +105,133 @@ impl From<Edge> for (usize, usize) {
 
 impl From<(usize, usize)> for Edge {
     fn from(value: (usize, usize)) -> Self {
-        Edge { u: value.0, v: value.1, w: 0, weighted: false }
+        Edge {
+            u: value.0,
+            v: value.1,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(usize, usize, i64)> for Edge {
     fn from(value: (usize, usize, i64)) -> Self {
-        Edge { u: value.0, v: value.1, w: value.2, weighted: true }
+        Edge {
+            u: value.0,
+            v: value.1,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
 impl From<(u64, u64)> for Edge {
     fn from(value: (u64, u64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(u64, u64, i64)> for Edge {
     fn from(value: (u64, u64, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
 impl From<(u32, u32)> for Edge {
     fn from(value: (u32, u32)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(u32, u32, i64)> for Edge {
     fn from(value: (u32, u32, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
 impl From<(isize, isize)> for Edge {
     fn from(value: (isize, isize)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(isize, isize, i64)> for Edge {
     fn from(value: (isize, isize, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
 impl From<(i64, i64)> for Edge {
     fn from(value: (i64, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(i64, i64, i64)> for Edge {
     fn from(value: (i64, i64, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
 impl From<(i32, i32)> for Edge {
     fn from(value: (i32, i32)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: 0, weighted: false }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: 0,
+            weighted: false,
+        }
     }
 }
 
 impl From<(i32, i32, i64)> for Edge {
     fn from(value: (i32, i32, i64)) -> Self {
-        Edge { u: value.0 as usize, v: value.1 as usize, w: value.2, weighted: true }
+        Edge {
+            u: value.0 as usize,
+            v: value.1 as usize,
+            w: value.2,
+            weighted: true,
+        }
     }
 }
 
@@ -145,34 +243,37 @@ pub struct SwitchGraph {
 
 impl SwitchGraph {
     #[allow(private_bounds)]
+    /// Build a switchable graph from an edge list.
     pub fn new<I, E>(edges: I, directed: bool) -> SwitchGraph
     where
         I: IntoIterator<Item = E>,
-        E: Into<Edge>
+        E: Into<Edge>,
     {
         let mut graph = SwitchGraph {
             directed,
             edges: HashMap::new(),
         };
 
-        for (u, v) in edges.into_iter().map(|e: E| { Into::<Edge>::into(e).into() }) {
+        for (u, v) in edges.into_iter().map(|e: E| Into::<Edge>::into(e).into()) {
             graph.insert(u, v);
         }
 
         graph
     }
 
+    /// Insert an edge, mirroring it automatically for undirected graphs.
     pub fn insert(&mut self, u: usize, v: usize) {
         self.insert_single(u, v);
-        
+
         if !self.directed && u != v {
             self.insert_single(v, u);
         }
     }
 
+    /// Remove an edge, mirroring it automatically for undirected graphs.
     pub fn remove(&mut self, u: usize, v: usize) {
         self.remove_single(u, v);
-        
+
         if !self.directed && u != v {
             self.remove_single(v, u);
         }
@@ -191,22 +292,23 @@ impl SwitchGraph {
         }
     }
 
+    /// Perform a random edge switch if a valid switch can be found.
     pub fn switch(&mut self, self_loop: bool, repeated_edges: bool) -> bool {
         let normalized_edges: Vec<((usize, usize), usize)> = self.get_normalized_edges();
-        
+
         if normalized_edges.len() < 2 {
             return false;
         }
 
         let weights: Vec<usize> = normalized_edges.iter().map(|(_, count)| *count).collect();
         let total_weight: usize = weights.iter().sum();
-        
+
         if total_weight < 2 {
             return false;
         }
 
         let mut rng = rng();
-        
+
         let first_index = WeightedIndex::new(&weights)
             .ok()
             .map(|dist| dist.sample(&mut rng))
@@ -283,7 +385,7 @@ impl SwitchGraph {
         repeated_edges: bool,
     ) -> Result<Self, &'static str> {
         Self::validate_directed_degree_sequence(degree_sequence)?;
-        
+
         if degree_sequence.is_empty() {
             return Ok(SwitchGraph::new(Vec::<(usize, usize)>::new(), true));
         }
@@ -293,53 +395,52 @@ impl SwitchGraph {
             .enumerate()
             .map(|(i, &(out, in_))| (out, in_, i))
             .collect();
-        
+
         vertices.sort_by(|a, b| b.0.cmp(&a.0).then(b.1.cmp(&a.1)));
 
         let mut graph = SwitchGraph::new(Vec::<(usize, usize)>::new(), true);
 
         loop {
-            let candidate = vertices.iter_mut()
-                .find(|(_, in_deg, _)| *in_deg > 0);
-            
+            let candidate = vertices.iter_mut().find(|(_, in_deg, _)| *in_deg > 0);
+
             let (_, in_deg, vto) = match candidate {
                 Some(tuple) => tuple,
                 None => break,
             };
-            
+
             let in_deg_val = *in_deg;
             let vto_val = *vto;
             *in_deg = 0;
-            
+
             let mut current_in_deg = in_deg_val;
             let mut j = 0;
-            
+
             while current_in_deg > 0 && j < vertices.len() {
                 let (out_deg, _, vfrom) = &mut vertices[j];
-                
+
                 if *out_deg == 0 {
                     j += 1;
                     continue;
                 }
-                
+
                 if !self_loop && *vfrom == vto_val {
                     j += 1;
                     continue;
                 }
-                
+
                 graph.insert(*vfrom, vto_val);
                 *out_deg -= 1;
                 current_in_deg -= 1;
-                
+
                 if !repeated_edges {
                     j += 1;
                 }
             }
-            
+
             if current_in_deg > 0 {
                 return Err("Degree sequence is not graphical...");
             }
-            
+
             vertices.sort_by(|a, b| b.0.cmp(&a.0).then(b.1.cmp(&a.1)));
         }
 
@@ -358,7 +459,7 @@ impl SwitchGraph {
         repeated_edges: bool,
     ) -> Result<Self, &'static str> {
         Self::validate_undirected_degree_sequence(degree_sequence)?;
-        
+
         if degree_sequence.is_empty() {
             return Ok(SwitchGraph::new(Vec::<(usize, usize)>::new(), false));
         }
@@ -368,7 +469,7 @@ impl SwitchGraph {
             .enumerate()
             .map(|(i, &deg)| (deg, i))
             .collect();
-        
+
         vertices.sort_by(|a, b| b.0.cmp(&a.0));
 
         let mut edges = Vec::new();
@@ -376,42 +477,44 @@ impl SwitchGraph {
         while !vertices.is_empty() && vertices[0].0 > 0 {
             let (deg, v) = vertices[0];
             vertices[0].0 = 0;
-            
+
             let mut current_deg = deg;
             let mut j = 1;
-            
+
             if self_loop && current_deg > 1 {
                 while current_deg > 1 {
                     edges.push((v, v));
                     current_deg -= 2;
-                    
+
                     if !repeated_edges {
                         break;
                     }
                 }
             }
-            
+
             while current_deg > 0 && j < vertices.len() {
                 let (other_deg, other_v) = &mut vertices[j];
-                
+
                 if *other_deg == 0 {
                     j += 1;
                     continue;
                 }
-                
+
                 edges.push((v, *other_v));
                 current_deg -= 1;
                 *other_deg -= 1;
-                
+
                 if !repeated_edges {
                     j += 1;
                 }
             }
-            
+
             if current_deg > 0 {
-                return Err("Degree sequence is not graphical: unable to satisfy degree requirements");
+                return Err(
+                    "Degree sequence is not graphical: unable to satisfy degree requirements",
+                );
             }
-            
+
             vertices.retain(|&(deg, _)| deg > 0);
             vertices.sort_by(|a, b| b.0.cmp(&a.0));
         }
@@ -422,12 +525,22 @@ impl SwitchGraph {
     pub fn validate_directed_degree_sequence(
         degree_sequence: &[(usize, usize)],
     ) -> Result<(), &'static str> {
-        if degree_sequence.iter().any(|&(out, in_)| out == 0 && in_ > 0) {
-            return Err("Degree sequence is not graphical: some vertices have zero out-degree but positive in-degree");
+        if degree_sequence
+            .iter()
+            .any(|&(out, in_)| out == 0 && in_ > 0)
+        {
+            return Err(
+                "Degree sequence is not graphical: some vertices have zero out-degree but positive in-degree",
+            );
         }
 
-        if degree_sequence.iter().any(|&(out, in_)| in_ == 0 && out > 0) {
-            return Err("Degree sequence is not graphical: some vertices have zero in-degree but positive out-degree");
+        if degree_sequence
+            .iter()
+            .any(|&(out, in_)| in_ == 0 && out > 0)
+        {
+            return Err(
+                "Degree sequence is not graphical: some vertices have zero in-degree but positive out-degree",
+            );
         }
 
         let total_out: usize = degree_sequence.iter().map(|&(out, _)| out).sum();
@@ -474,25 +587,37 @@ impl SwitchGraph {
     }
 }
 
+/// Adjacency-list graph container used by most graph APIs in the crate.
 pub struct Graph {
     directed: bool,
     edges: HashMap<usize, Vec<Edge>>,
 }
 
+/// Summary statistics for a [`Graph`].
 #[derive(Debug, Clone)]
 pub struct GraphStats {
+    /// Number of nodes.
     pub node_count: usize,
+    /// Number of edges as reported by [`Graph::edge_count`].
     pub edge_count: usize,
+    /// Whether the graph is directed.
     pub directed: bool,
+    /// Minimum out-degree (or stored degree for undirected graphs).
     pub min_degree: usize,
+    /// Maximum out-degree (or stored degree for undirected graphs).
     pub max_degree: usize,
+    /// Average out-degree (or stored degree for undirected graphs).
     pub avg_degree: f64,
 }
 
+/// Options shared by some graph-generation helpers.
 #[derive(Debug, Clone)]
 pub struct GraphGenOptions {
+    /// Whether the generated graph is directed.
     pub directed: bool,
+    /// Whether self-loops are allowed.
     pub self_loop: bool,
+    /// Whether repeated edges are allowed.
     pub repeated_edges: bool,
 }
 
@@ -506,12 +631,16 @@ impl Default for GraphGenOptions {
     }
 }
 
+/// Degree-sequence input accepted by [`Graph::from_degree_sequence`].
 pub enum DegreeSequence<'a> {
+    /// Directed degree sequence as `(out_degree, in_degree)` pairs.
     Directed(&'a [(usize, usize)]),
+    /// Undirected degree sequence.
     Undirected(&'a [usize]),
 }
 
 impl Graph {
+    /// Create a graph with nodes `1..=point_count`.
     pub fn new(point_count: usize, directed: bool) -> Graph {
         let mut graph = Graph {
             directed,
@@ -525,10 +654,12 @@ impl Graph {
         graph
     }
 
+    /// Return whether the graph is directed.
     pub fn is_directed(&self) -> bool {
         self.directed
     }
 
+    /// Create a graph from an explicit node set.
     pub fn with_nodes<I: IntoIterator<Item = usize>>(nodes: I, directed: bool) -> Graph {
         let mut graph = Graph {
             directed,
@@ -540,10 +671,12 @@ impl Graph {
         graph
     }
 
+    /// Return the number of nodes in the graph.
     pub fn node_count(&self) -> usize {
         self.edges.len()
     }
 
+    /// Check whether every edge endpoint appears in the node set.
     pub fn is_valid(&self) -> bool {
         let nodes: std::collections::HashSet<usize> = self.edges.keys().cloned().collect();
         for edge in self.iter_edges_all() {
@@ -554,6 +687,7 @@ impl Graph {
         true
     }
 
+    /// Compute basic summary statistics.
     pub fn stats(&self) -> GraphStats {
         let node_count = self.node_count();
         let edge_count = self.edge_count();
@@ -588,6 +722,7 @@ impl Graph {
         }
     }
 
+    /// Export the graph as adjacency-list text.
     pub fn to_adj_list_string(&self, sep: &str) -> String {
         let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
         nodes.sort_unstable();
@@ -610,6 +745,7 @@ impl Graph {
         lines.join("\n")
     }
 
+    /// Export the graph as an adjacency matrix together with sorted node labels.
     pub fn to_matrix(&self, default: i64) -> (Vec<usize>, Vec<Vec<i64>>) {
         let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
         nodes.sort_unstable();
@@ -633,9 +769,10 @@ impl Graph {
 
 impl Graph {
     pub fn iter_edges(&self) -> impl Iterator<Item = &Edge> {
-        self.edges.values()
+        self.edges
+            .values()
             .flat_map(|v| v.iter())
-            .filter(|e| { e.v >= e.u || self.directed })
+            .filter(|e| e.v >= e.u || self.directed)
     }
 
     pub fn iter_edges_all(&self) -> impl Iterator<Item = &Edge> {
@@ -643,27 +780,31 @@ impl Graph {
     }
 
     pub fn iter_edges_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
-        self.edges.values_mut()
+        self.edges
+            .values_mut()
             .flat_map(|v| v.iter_mut())
-            .filter(|e| { e.v >= e.u || self.directed })
+            .filter(|e| e.v >= e.u || self.directed)
     }
 
     pub fn iter_edges_all_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
         self.edges.values_mut().flat_map(|v| v.iter_mut())
     }
 
+    /// Count undirected edges once, or all edges for directed graphs.
     pub fn edge_count(&self) -> usize {
         self.iter_edges().count()
     }
 
+    /// Count all stored adjacency-list edges.
     pub fn edge_count_all(&self) -> usize {
         self.iter_edges_all().count()
     }
-    
+
+    /// Insert a single adjacency entry without automatic mirroring.
     pub fn add_single_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
         self.edges
             .entry(u)
-            .and_modify(|g| { g.push(Edge::new(u, v, w)) })
+            .and_modify(|g| g.push(Edge::new(u, v, w)))
             .or_insert(vec![Edge::new(u, v, w)]);
     }
 
@@ -678,6 +819,7 @@ impl Graph {
         }
     }
 
+    /// Insert an edge, mirroring it automatically for undirected graphs.
     pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
         if self.directed {
             self.add_directed_edge(u, v, w);
@@ -686,6 +828,7 @@ impl Graph {
         }
     }
 
+    /// Insert multiple edges from any iterator of edge-like items.
     pub fn add_edges<I, E>(&mut self, edges: I)
     where
         I: IntoIterator<Item = E>,
@@ -701,6 +844,7 @@ impl Graph {
         }
     }
 
+    /// Insert an edge using a custom weight generator.
     pub fn add_edge_with_weight<F>(&mut self, u: usize, v: usize, mut weight_gen: F)
     where
         F: FnMut() -> i64,
@@ -720,6 +864,7 @@ impl Graph {
         }
     }
 
+    /// Build a chain graph on `point_count` nodes.
     pub fn chain(
         point_count: usize,
         weight_limit: Option<(i64, i64)>,
@@ -737,12 +882,17 @@ impl Graph {
 
         let mut graph = Graph::new(point_count, directed);
         for i in 2..=point_count {
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            let weight = if is_unweighted {
+                None
+            } else {
+                Some(weight_gen(&mut rng))
+            };
             graph.add_edge(i - 1, i, weight);
         }
         graph
     }
 
+    /// Build a flower graph with node `1` as the center.
     pub fn flower(
         point_count: usize,
         weight_limit: Option<(i64, i64)>,
@@ -760,15 +910,26 @@ impl Graph {
 
         let mut graph = Graph::new(point_count, directed);
         for i in 2..=point_count {
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            let weight = if is_unweighted {
+                None
+            } else {
+                Some(weight_gen(&mut rng))
+            };
             graph.add_edge(1, i, weight);
         }
         graph
     }
 
-    pub fn to_string(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>) -> String {
+    /// Render the graph as newline-separated edge text.
+    pub fn to_string(
+        &self,
+        shuffle: bool,
+        line_reserve: Option<usize>,
+        edge_display_function: Option<Box<dyn Fn(&Edge) -> String>>,
+    ) -> String {
         let mut rng = rng();
-        let edge_display_function = edge_display_function.unwrap_or_else(|| { Box::new(|e: &Edge| e.format_default()) });
+        let edge_display_function =
+            edge_display_function.unwrap_or_else(|| Box::new(|e: &Edge| e.format_default()));
         let mut buf: Vec<String> = Vec::new();
         buf.reserve(self.edge_count() * line_reserve.unwrap_or(6));
 
@@ -777,7 +938,11 @@ impl Graph {
             new_node_id.shuffle(&mut rng);
             let mut edge_buf: Vec<Edge> = Vec::new();
             for edge in self.iter_edges() {
-                edge_buf.push(Edge::new(new_node_id[edge.u - 1], new_node_id[edge.v - 1], if edge.weighted { Some(edge.w) } else { None }));
+                edge_buf.push(Edge::new(
+                    new_node_id[edge.u - 1],
+                    new_node_id[edge.v - 1],
+                    if edge.weighted { Some(edge.w) } else { None },
+                ));
             }
             edge_buf.shuffle(&mut rng);
             // for edge in edge_buf {
@@ -785,15 +950,14 @@ impl Graph {
 
             //     }
             // }
-            edge_buf.iter_mut()
-                .for_each(|e| {
-                    if !self.directed && rng.random_bool(0.5) {
-                        let tmpu = e.u;
-                        let tmpv = e.v;
-                        e.u = tmpv;
-                        e.v = tmpu;
-                    }
-                });
+            edge_buf.iter_mut().for_each(|e| {
+                if !self.directed && rng.random_bool(0.5) {
+                    let tmpu = e.u;
+                    let tmpv = e.v;
+                    e.u = tmpv;
+                    e.v = tmpu;
+                }
+            });
             for edge in &edge_buf {
                 buf.push(edge_display_function(edge));
             }
@@ -805,7 +969,12 @@ impl Graph {
         buf.join("\n")
     }
 
-    pub fn to_string_with<F>(&self, shuffle: bool, line_reserve: Option<usize>, edge_display_function: F) -> String
+    pub fn to_string_with<F>(
+        &self,
+        shuffle: bool,
+        line_reserve: Option<usize>,
+        edge_display_function: F,
+    ) -> String
     where
         F: Fn(&Edge) -> String + 'static,
     {
@@ -819,6 +988,7 @@ impl Graph {
         }
     }
 
+    /// Shuffle node labels while keeping graph structure intact.
     pub fn shuffle_labels(&self) -> Graph {
         let mut rng = rng();
         let nodes: Vec<usize> = self.edges.keys().cloned().collect();
@@ -936,10 +1106,12 @@ impl Graph {
         }
     }
 
+    /// Create a weighted edge generator with uniform distribution.
     pub fn weight_uniform(min_weight: i64, max_weight: i64) -> impl FnMut(&mut ThreadRng) -> i64 {
         move |rng: &mut ThreadRng| rng.random_range(min_weight..=max_weight)
     }
 
+    /// Create a weighted edge generator with exponentially biased weights.
     pub fn weight_exponential(
         min_weight: i64,
         max_weight: i64,
@@ -976,6 +1148,7 @@ impl fmt::Display for Graph {
 // }
 
 impl Graph {
+    /// Generate a random tree.
     pub fn tree(
         point_count: usize,
         chain: f64,
@@ -993,7 +1166,7 @@ impl Graph {
             chain + flower <= 1.0,
             "chain plus flower must be less than or equal to 1.0"
         );
-        
+
         let mut rng = rng();
         let is_unweighted = weight_limit.is_none();
         let use_custom_weight_gen = weight_gen.is_some();
@@ -1002,7 +1175,7 @@ impl Graph {
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
-        
+
         let default_father_gen = |rng: &mut ThreadRng, cur| {
             if cur <= 1 {
                 1
@@ -1010,12 +1183,13 @@ impl Graph {
                 rng.random_range(1..cur)
             }
         };
-        let mut father_gen = father_gen.unwrap_or_else(|| Box::new(move |rng, cur| default_father_gen(rng, cur)));
-        
+        let mut father_gen =
+            father_gen.unwrap_or_else(|| Box::new(move |rng, cur| default_father_gen(rng, cur)));
+
         let total_edges = point_count.saturating_sub(1);
         let chain_count = ((total_edges as f64) * chain).round() as usize;
         let flower_count = ((total_edges as f64) * flower).round() as usize;
-        
+
         let mut graph = Graph::new(point_count, directed);
 
         let chain_end = chain_count + 1;
@@ -1032,35 +1206,54 @@ impl Graph {
                 for edge in flower_graph.iter_edges_all() {
                     let mut u = edge.u;
                     let mut v = edge.v;
-                    if u != 1 { u += offset; }
-                    if v != 1 { v += offset; }
+                    if u != 1 {
+                        u += offset;
+                    }
+                    if v != 1 {
+                        v += offset;
+                    }
                     let weight = if edge.weighted { Some(edge.w) } else { None };
                     graph.add_edge(u, v, weight);
                 }
             }
         } else {
             for i in 2..=chain_end {
-                let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+                let weight = if is_unweighted {
+                    None
+                } else {
+                    Some(weight_gen(&mut rng))
+                };
                 graph.add_edge(i - 1, i, weight);
             }
 
             for i in flower_start..flower_end {
-                let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+                let weight = if is_unweighted {
+                    None
+                } else {
+                    Some(weight_gen(&mut rng))
+                };
                 graph.add_edge(1, i, weight);
             }
         }
-        
+
         let random_start = flower_end;
         for i in random_start..=point_count {
-            if i == 1 { continue; }
+            if i == 1 {
+                continue;
+            }
             let father = father_gen(&mut rng, i);
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+            let weight = if is_unweighted {
+                None
+            } else {
+                Some(weight_gen(&mut rng))
+            };
             graph.add_edge(father, i, weight);
         }
-        
+
         graph
     }
 
+    /// Generate a binary tree on `point_count` nodes.
     pub fn binary_tree(
         point_count: usize,
         left: f64,
@@ -1069,10 +1262,7 @@ impl Graph {
         directed: bool,
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
-        assert!(
-            point_count > 0,
-            "point_count must be above zero"
-        );
+        assert!(point_count > 0, "point_count must be above zero");
         assert!(
             (0.0..=1.0).contains(&left) && (0.0..=1.0).contains(&right),
             "left and right must be between 0.0 and 1.0"
@@ -1081,24 +1271,24 @@ impl Graph {
             left + right <= 1.0,
             "left plus right must be less than or equal to 1.0"
         );
-        
+
         let mut rng = rng();
         let is_unweighted = weight_limit.is_none();
-        
+
         let default_weight_gen = |rng: &mut ThreadRng| {
             let (min_weight, max_weight) = weight_limit.unwrap();
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
-        
+
         let mut graph = Graph::new(point_count, directed);
-        
+
         let mut can_left = vec![1];
         let mut can_right = vec![1];
-        
+
         for node_id in 2..=point_count {
             let edge_pos: f64 = rng.random();
-            
+
             let is_left = if edge_pos < left {
                 true
             } else if edge_pos < left + right {
@@ -1107,7 +1297,7 @@ impl Graph {
                 let mid = left + right + (1.0 - left - right) / 2.0;
                 edge_pos <= mid
             };
-            
+
             let parent = if is_left {
                 let idx = rng.random_range(0..can_left.len());
                 can_left.swap_remove(idx)
@@ -1115,13 +1305,17 @@ impl Graph {
                 let idx = rng.random_range(0..can_right.len());
                 can_right.swap_remove(idx)
             };
-            
-            let weight = if is_unweighted { None } else { Some(weight_gen(&mut rng)) };
+
+            let weight = if is_unweighted {
+                None
+            } else {
+                Some(weight_gen(&mut rng))
+            };
             graph.add_edge(parent, node_id, weight);
             can_left.push(node_id);
             can_right.push(node_id);
         }
-        
+
         graph
     }
 
@@ -1250,6 +1444,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a random graph with the requested edge count.
     pub fn graph(
         point_count: usize,
         edge_count: usize,
@@ -1264,7 +1459,8 @@ impl Graph {
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1294,7 +1490,11 @@ impl Graph {
                 continue;
             }
 
-            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            let weight = if use_weight {
+                Some(weight_gen(&mut rng))
+            } else {
+                None
+            };
             graph.add_edge(u, v, weight);
             used.insert(key);
             count += 1;
@@ -1303,6 +1503,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a random graph using explicit generation options.
     pub fn graph_with_options(
         point_count: usize,
         edge_count: usize,
@@ -1330,18 +1531,12 @@ impl Graph {
         Graph::graph_with_options(point_count, edge_count, options, Some(weight_limit), None)
     }
 
+    /// Generate a simple graph without repeated edges.
     pub fn simple_graph(point_count: usize, edge_count: usize, directed: bool) -> Graph {
-        Graph::graph(
-            point_count,
-            edge_count,
-            directed,
-            false,
-            false,
-            None,
-            None,
-        )
+        Graph::graph(point_count, edge_count, directed, false, false, None, None)
     }
 
+    /// Generate a graph that may contain repeated edges.
     pub fn multigraph(
         point_count: usize,
         edge_count: usize,
@@ -1359,6 +1554,7 @@ impl Graph {
         )
     }
 
+    /// Generate a complete graph.
     pub fn complete_graph(
         point_count: usize,
         directed: bool,
@@ -1369,7 +1565,8 @@ impl Graph {
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1381,13 +1578,18 @@ impl Graph {
                 if u == v {
                     continue;
                 }
-                let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                let weight = if use_weight {
+                    Some(weight_gen(&mut rng))
+                } else {
+                    None
+                };
                 graph.add_edge(u, v, weight);
             }
         }
         graph
     }
 
+    /// Generate a complete bipartite graph.
     pub fn complete_bipartite(
         left_count: usize,
         right_count: usize,
@@ -1395,11 +1597,15 @@ impl Graph {
         weight_limit: Option<(i64, i64)>,
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
-        assert!(left_count > 0 && right_count > 0, "partition sizes must be above zero");
+        assert!(
+            left_count > 0 && right_count > 0,
+            "partition sizes must be above zero"
+        );
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1411,7 +1617,11 @@ impl Graph {
 
         for &u in &left_nodes {
             for &v in &right_nodes {
-                let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                let weight = if use_weight {
+                    Some(weight_gen(&mut rng))
+                } else {
+                    None
+                };
                 graph.add_edge(u, v, weight);
             }
         }
@@ -1419,7 +1629,11 @@ impl Graph {
         if directed {
             for &u in &right_nodes {
                 for &v in &left_nodes {
-                    let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+                    let weight = if use_weight {
+                        Some(weight_gen(&mut rng))
+                    } else {
+                        None
+                    };
                     graph.add_edge(u, v, weight);
                 }
             }
@@ -1474,6 +1688,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a random DAG.
     pub fn dag(
         point_count: usize,
         edge_count: usize,
@@ -1483,6 +1698,7 @@ impl Graph {
         Self::dag_with_options(point_count, edge_count, false, weight_limit, weight_gen)
     }
 
+    /// Generate a random DAG using explicit generation options.
     pub fn dag_with_options(
         point_count: usize,
         edge_count: usize,
@@ -1495,7 +1711,8 @@ impl Graph {
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1514,7 +1731,11 @@ impl Graph {
             if used.contains(&(from, to)) {
                 continue;
             }
-            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            let weight = if use_weight {
+                Some(weight_gen(&mut rng))
+            } else {
+                None
+            };
             graph.add_edge(from, to, weight);
             used.insert((from, to));
             count += 1;
@@ -1523,6 +1744,7 @@ impl Graph {
         graph
     }
 
+    /// Generate an undirected acyclic graph by filtering a DAG construction order.
     pub fn udag(
         point_count: usize,
         edge_count: usize,
@@ -1537,7 +1759,8 @@ impl Graph {
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1570,7 +1793,11 @@ impl Graph {
             if ru == rv {
                 continue;
             }
-            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            let weight = if use_weight {
+                Some(weight_gen(&mut rng))
+            } else {
+                None
+            };
             graph.add_edge(u, v, weight);
             union(&mut parent, u, v);
             count += 1;
@@ -1579,6 +1806,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a connected graph.
     pub fn connected(
         point_count: usize,
         edge_count: usize,
@@ -1595,7 +1823,8 @@ impl Graph {
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1629,7 +1858,11 @@ impl Graph {
             if used.contains(&key) {
                 continue;
             }
-            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            let weight = if use_weight {
+                Some(weight_gen(&mut rng))
+            } else {
+                None
+            };
             graph.add_edge(u, v, weight);
             used.insert(key);
             count += 1;
@@ -1638,6 +1871,7 @@ impl Graph {
         graph
     }
 
+    /// Add edges until the graph becomes connected.
     pub fn ensure_connected(&mut self) {
         let mut parent: HashMap<usize, usize> = self.edges.keys().map(|&k| (k, k)).collect();
 
@@ -1681,6 +1915,7 @@ impl Graph {
         }
     }
 
+    /// Add edges to heuristically increase connectivity to at least `k`.
     pub fn make_k_connected(&mut self, k: usize) {
         if k == 0 {
             return;
@@ -1704,6 +1939,7 @@ impl Graph {
         }
     }
 
+    /// Generate a forest.
     pub fn forest(
         point_count: usize,
         tree_count: usize,
@@ -1712,12 +1948,16 @@ impl Graph {
         weight_gen: Option<Box<dyn FnMut(&mut ThreadRng) -> i64>>,
     ) -> Graph {
         assert!(point_count > 0, "point_count must be above zero");
-        assert!(tree_count >= 1 && tree_count <= point_count, "invalid tree_count");
+        assert!(
+            tree_count >= 1 && tree_count <= point_count,
+            "invalid tree_count"
+        );
 
         let mut rng = rng();
         let use_weight = weight_limit.is_some() || weight_gen.is_some();
         let default_weight_gen = |rng: &mut ThreadRng| {
-            let (min_weight, max_weight) = weight_limit.expect("weight_limit required for default generator");
+            let (min_weight, max_weight) =
+                weight_limit.expect("weight_limit required for default generator");
             rng.random_range(min_weight..=max_weight)
         };
         let mut weight_gen = weight_gen.unwrap_or_else(|| Box::new(default_weight_gen));
@@ -1750,7 +1990,11 @@ impl Graph {
             if ru == rv {
                 continue;
             }
-            let weight = if use_weight { Some(weight_gen(&mut rng)) } else { None };
+            let weight = if use_weight {
+                Some(weight_gen(&mut rng))
+            } else {
+                None
+            };
             graph.add_edge(u, v, weight);
             union(&mut parent, u, v);
             components -= 1;
@@ -1792,11 +2036,8 @@ impl Graph {
         self_loop: bool,
         repeated_edges: bool,
     ) -> Result<Graph, &'static str> {
-        let switch = SwitchGraph::from_directed_degree_sequence(
-            degree_sequence,
-            self_loop,
-            repeated_edges,
-        )?;
+        let switch =
+            SwitchGraph::from_directed_degree_sequence(degree_sequence, self_loop, repeated_edges)?;
         let mut graph = Graph::new(degree_sequence.len(), true);
         for (u, v) in switch.iter_edges() {
             graph.add_edge(u, v, None);
@@ -1821,6 +2062,7 @@ impl Graph {
         Ok(graph)
     }
 
+    /// Build a graph from a degree sequence.
     pub fn from_degree_sequence(
         degree_sequence: DegreeSequence<'_>,
         self_loop: bool,
@@ -1836,6 +2078,7 @@ impl Graph {
         }
     }
 
+    /// Return an upper bound on the number of edges for the given graph type.
     pub fn max_edge_count(point_count: usize, directed: bool, self_loop: bool) -> usize {
         if directed {
             if self_loop {
@@ -1885,6 +2128,7 @@ impl Graph {
         Graph::max_edge_count(point_count, directed, self_loop) as f64
     }
 
+    /// Generate a graph layout commonly used to stress SPFA-like algorithms.
     pub fn hack_spfa(point_count: usize, weight_limit: Option<(i64, i64)>) -> Graph {
         assert!(point_count > 1, "point_count must be above one");
         let mut graph = Graph::new(point_count, true);
@@ -1924,33 +2168,40 @@ impl Graph {
     }
 }
 
+/// Dense adjacency-matrix helper.
 pub struct GraphMatrix<T> {
     matrix: Vec<Vec<T>>,
     default: T,
 }
 
 impl<T: Clone> GraphMatrix<T> {
+    /// Create an `n x n` matrix filled with `default`.
     pub fn new(n: usize, default: T) -> Self {
         let matrix = vec![vec![default.clone(); n]; n];
         Self { matrix, default }
     }
 
+    /// Return the matrix dimension.
     pub fn size(&self) -> usize {
         self.matrix.len()
     }
 
+    /// Return the configured default value.
     pub fn default_value(&self) -> &T {
         &self.default
     }
 
+    /// Borrow a matrix cell by `(row, column)`.
     pub fn get(&self, u: usize, v: usize) -> &T {
         &self.matrix[u][v]
     }
 
+    /// Overwrite a matrix cell by `(row, column)`.
     pub fn set(&mut self, u: usize, v: usize, value: T) {
         self.matrix[u][v] = value;
     }
 
+    /// Iterate over matrix rows.
     pub fn iter(&self) -> impl Iterator<Item = &[T]> {
         self.matrix.iter().map(|row| row.as_slice())
     }
@@ -1974,12 +2225,14 @@ impl<T> std::ops::IndexMut<(usize, usize)> for GraphMatrix<T> {
     }
 }
 
+/// Merge multiple graphs into one graph view.
 pub struct Merger {
     directed: bool,
     graphs: Vec<Graph>,
 }
 
 impl Merger {
+    /// Create a merger from existing graph components.
     pub fn new<I: IntoIterator<Item = Graph>>(graphs: I, directed: bool) -> Self {
         Self {
             directed,
@@ -1987,16 +2240,19 @@ impl Merger {
         }
     }
 
+    /// Add a one-edge component to the merger.
     pub fn add_edge(&mut self, u: usize, v: usize, w: Option<i64>) {
         let mut graph = Graph::new(u.max(v), self.directed);
         graph.add_edge(u, v, w);
         self.graphs.push(graph);
     }
 
+    /// Render the merged graph as edge text.
     pub fn to_string(&self) -> String {
         self.to_graph().to_string(false, None, None)
     }
 
+    /// Materialize the merged graph.
     pub fn to_graph(&self) -> Graph {
         let mut max_node = 0usize;
         for graph in &self.graphs {
@@ -2012,6 +2268,7 @@ impl Merger {
         merged
     }
 
+    /// Generate a graph with a requested number of connected components.
     pub fn component(
         point_count: usize,
         edge_count: usize,
@@ -2019,7 +2276,10 @@ impl Merger {
         directed: bool,
     ) -> Graph {
         assert!(point_count > 0, "point_count must be above zero");
-        assert!(component_count >= 1 && component_count <= point_count, "invalid component_count");
+        assert!(
+            component_count >= 1 && component_count <= point_count,
+            "invalid component_count"
+        );
         assert!(
             edge_count >= point_count - component_count,
             "edge_count too small for requested components"

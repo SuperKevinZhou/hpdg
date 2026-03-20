@@ -1,9 +1,25 @@
-﻿use std::cell::RefCell;
+//! Formula-driven and memoized sequences.
+//!
+//! This module is useful when testcase generators depend on recurrence relations or other
+//! index-based formulas. Values are memoized automatically once computed.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::sequence::arithmetic_sequence;
+//!
+//! let seq = arithmetic_sequence(2, 3);
+//! assert_eq!(seq.get_range(0, 3), vec![2, 5, 8, 11]);
+//! ```
+
+use std::cell::RefCell;
 use std::collections::HashMap;
 
-/// Initial values used by a sequence.
+/// Initial values used by a [`Sequence`].
 pub enum SequenceInit<T> {
+    /// Seed values given as `[a0, a1, a2, ...]`.
     List(Vec<T>),
+    /// Seed values keyed by explicit indices.
     Map(HashMap<usize, T>),
 }
 
@@ -28,7 +44,7 @@ impl<T> From<HashMap<usize, T>> for SequenceInit<T> {
     }
 }
 
-/// Formula-driven sequence generator.
+/// Formula-driven sequence generator with memoization.
 pub struct Sequence<T, F>
 where
     F: Fn(usize, &dyn Fn(usize) -> T) -> T,
@@ -42,6 +58,7 @@ where
     T: Clone,
     F: Fn(usize, &dyn Fn(usize) -> T) -> T,
 {
+    /// Create a sequence from a formula.
     pub fn new(formula: F) -> Self {
         Self {
             formula,
@@ -49,6 +66,7 @@ where
         }
     }
 
+    /// Create a sequence from a formula plus initial values.
     pub fn with_initial<I>(formula: F, initial: I) -> Self
     where
         I: Into<SequenceInit<T>>,
@@ -60,7 +78,7 @@ where
         }
     }
 
-    /// Retrieve a single element (memoized).
+    /// Retrieve a single element, memoizing it if necessary.
     pub fn get_one(&self, i: usize) -> T {
         if let Some(value) = self.values.borrow().get(&i) {
             return value.clone();
@@ -70,7 +88,7 @@ where
         value
     }
 
-    /// Retrieve a range [left, right] (inclusive).
+    /// Retrieve a range `[left, right]` (inclusive).
     pub fn get_range(&self, left: usize, right: usize) -> Vec<T> {
         if left > right {
             return Vec::new();
@@ -83,7 +101,7 @@ where
         indices.iter().map(|&i| self.get_one(i)).collect()
     }
 
-    /// Iterate over a range [left, right] (inclusive).
+    /// Iterate over a range `[left, right]` (inclusive).
     pub fn iter_range(&self, left: usize, right: usize) -> SequenceRangeIter<'_, T, F> {
         SequenceRangeIter {
             sequence: self,
@@ -93,6 +111,7 @@ where
     }
 }
 
+/// Iterator returned by [`Sequence::iter_range`].
 pub struct SequenceRangeIter<'a, T, F>
 where
     F: Fn(usize, &dyn Fn(usize) -> T) -> T,
@@ -120,7 +139,8 @@ where
 }
 
 /// Helper for arithmetic progressions.
-/// Example: arithmetic_sequence(1, 2) -> 1, 3, 5, ...
+///
+/// `arithmetic_sequence(1, 2)` yields `1, 3, 5, ...`.
 pub fn arithmetic_sequence(
     start: i64,
     diff: i64,
@@ -129,7 +149,8 @@ pub fn arithmetic_sequence(
 }
 
 /// Helper for geometric progressions.
-/// Example: geometric_sequence(1, 3) -> 1, 3, 9, ...
+///
+/// `geometric_sequence(1, 3)` yields `1, 3, 9, ...`.
 pub fn geometric_sequence(
     start: i64,
     ratio: i64,

@@ -1,6 +1,10 @@
+//! Integer geometry helpers for competitive-programming testcases.
+//!
+//! The focus here is convenience rather than a full computational-geometry toolkit:
+//! random points, convex hulls, simple polygon ordering, and a few formatting helpers.
+
 use rand::Rng;
 use std::fmt;
-
 
 /// 2D point with integer coordinates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -10,6 +14,7 @@ pub struct Point {
 }
 
 impl Point {
+    /// Construct a point from integer coordinates.
     pub fn new(x: i64, y: i64) -> Self {
         Self { x, y }
     }
@@ -22,6 +27,7 @@ pub struct Polygon {
 }
 
 impl Polygon {
+    /// Construct a polygon from an ordered list of points.
     pub fn new(points: Vec<Point>) -> Self {
         Self { points }
     }
@@ -56,7 +62,7 @@ impl Polygon {
         (sum.abs() as f64) * 0.5
     }
 
-    /// Compute the convex hull (monotonic chain).
+    /// Compute the convex hull with the monotonic-chain algorithm.
     pub fn convex_hull(points: &[Point]) -> Self {
         if points.len() <= 1 {
             return Self::new(points.to_vec());
@@ -106,7 +112,7 @@ impl Polygon {
         Self::new(lower)
     }
 
-    /// Build a simple polygon by angular sorting.
+    /// Build a simple polygon by angular sorting around the centroid.
     pub fn simple_polygon(points: &[Point]) -> Self {
         if points.len() <= 2 {
             return Self::new(points.to_vec());
@@ -122,7 +128,9 @@ impl Polygon {
         pts.sort_by(|a, b| {
             let ang_a = (a.y as f64 - cy).atan2(a.x as f64 - cx);
             let ang_b = (b.y as f64 - cy).atan2(b.x as f64 - cx);
-            ang_a.partial_cmp(&ang_b).unwrap_or(std::cmp::Ordering::Equal)
+            ang_a
+                .partial_cmp(&ang_b)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
         Self::new(pts)
     }
@@ -158,18 +166,13 @@ impl fmt::Display for Polygon {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_area_and_perimeter() {
-        let poly = Polygon::new(vec![
-            Point::new(0, 0),
-            Point::new(4, 0),
-            Point::new(0, 3),
-        ]);
+        let poly = Polygon::new(vec![Point::new(0, 0), Point::new(4, 0), Point::new(0, 3)]);
         assert!((poly.area() - 6.0).abs() < 1e-6);
         assert!((poly.perimeter() - 12.0).abs() < 1e-6);
     }

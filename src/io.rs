@@ -1,24 +1,36 @@
-/// IO module for generating testcase input/output buffers and filenames.
-///
-/// # Example
-/// ```rust
-/// use hpdg::io::IO;
-///
-/// let mut io = IO::new("sample".to_string());
-/// io.input_writeln("1 2 3");
-/// io.output_writeln("ok");
-/// ```
+//! Testcase I/O buffers, file naming, process execution, and streaming output.
+//!
+//! This module is the glue layer for many `hpdg` workflows. You can build input/output
+//! buffers in memory, flush them to disk, invoke a standard solution, capture its output,
+//! and scale up to batches or streaming writes.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::io::IO;
+//!
+//! let mut io = IO::new("sample".to_string());
+//! io.input_writeln("1 2 3");
+//! io.output_writeln("ok");
+//! assert!(io.last_capture().is_none());
+//! ```
+
+/// Formatting strategy used by [`IO`] write helpers.
 pub trait Formatter {
     fn format_item(&self, item: &dyn std::fmt::Display) -> String;
     fn join(&self, items: &[String]) -> String;
 
+    /// Format and join an iterator of displayable items.
     fn format_iter<I, T>(&self, items: I) -> String
     where
         I: IntoIterator<Item = T>,
         T: std::fmt::Display,
         Self: Sized,
     {
-        let rendered: Vec<String> = items.into_iter().map(|item| self.format_item(&item)).collect();
+        let rendered: Vec<String> = items
+            .into_iter()
+            .map(|item| self.format_item(&item))
+            .collect();
         self.join(&rendered)
     }
 }
@@ -30,6 +42,7 @@ pub struct SepFormatter {
 }
 
 impl SepFormatter {
+    /// Create a formatter that joins items with `sep`.
     pub fn new(sep: String) -> Self {
         Self { sep }
     }
@@ -47,22 +60,31 @@ impl Formatter for SepFormatter {
 
 impl Default for SepFormatter {
     fn default() -> Self {
-        Self { sep: " ".to_string() }
+        Self {
+            sep: " ".to_string(),
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 /// Capture of a program execution.
 pub struct OutputCapture {
+    /// Process exit code, if available.
     pub code: Option<i32>,
+    /// Whether the process exited successfully.
     pub success: bool,
+    /// Raw stdout bytes.
     pub stdout: Vec<u8>,
+    /// Raw stderr bytes.
     pub stderr: Vec<u8>,
+    /// Decoded stdout text.
     pub stdout_text: String,
+    /// Decoded stderr text.
     pub stderr_text: String,
 }
 
 #[derive(Debug)]
+/// I/O and process-related errors for the [`io`](crate::io) module.
 pub enum IOError {
     Io(std::io::Error),
     Process(String),
@@ -85,6 +107,7 @@ impl From<std::io::Error> for IOError {
     }
 }
 
+/// Result type used by higher-level I/O helpers.
 pub type IOResult<T> = Result<T, IOError>;
 
 #[derive(Debug, Clone)]
@@ -115,6 +138,7 @@ pub struct IO {
 }
 
 impl IO {
+    /// Create a new testcase helper with a file prefix such as `"sample"` or `"data/1"`.
     pub fn new(file_prefix: String) -> IO {
         let input_suffix = "in".to_string();
         let output_suffix = "out".to_string();
@@ -267,21 +291,17 @@ impl IO {
             let joiner = &self.data_id_separator;
             self.input_file = Self::normalize_path(&format!(
                 "{}{}{}.{}",
-                input_prefix,
-                joiner,
-                id,
-                self.input_suffix
+                input_prefix, joiner, id, self.input_suffix
             ));
             self.output_file = Self::normalize_path(&format!(
                 "{}{}{}.{}",
-                output_prefix,
-                joiner,
-                id,
-                self.output_suffix
+                output_prefix, joiner, id, self.output_suffix
             ));
         } else {
-            self.input_file = Self::normalize_path(&format!("{}.{}", input_prefix, self.input_suffix));
-            self.output_file = Self::normalize_path(&format!("{}.{}", output_prefix, self.output_suffix));
+            self.input_file =
+                Self::normalize_path(&format!("{}.{}", input_prefix, self.input_suffix));
+            self.output_file =
+                Self::normalize_path(&format!("{}.{}", output_prefix, self.output_suffix));
         }
     }
 
@@ -294,21 +314,25 @@ impl IO {
 }
 
 impl IO {
+    /// Write a value to the input buffer without a trailing newline.
     pub fn input_write<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
         let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}", s));
         self
     }
 
+    /// Write a value to the output buffer without a trailing newline.
     pub fn output_write<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
         let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}", s));
         self
     }
 
+    /// Write a value to the input buffer followed by `\n`.
     pub fn input_writeln<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
         let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}\n", s));
         self
     }
-    
+
+    /// Write a value to the output buffer followed by `\n`.
     pub fn output_writeln<S: std::fmt::Display>(&mut self, s: S) -> &mut Self {
         let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}\n", s));
         self
@@ -324,7 +348,10 @@ impl IO {
             let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}", first));
         }
         for item in iter {
-            let _ = std::fmt::Write::write_fmt(&mut self.input_content, format_args!("{}{}", sep, item));
+            let _ = std::fmt::Write::write_fmt(
+                &mut self.input_content,
+                format_args!("{}{}", sep, item),
+            );
         }
         self
     }
@@ -339,7 +366,10 @@ impl IO {
             let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}", first));
         }
         for item in iter {
-            let _ = std::fmt::Write::write_fmt(&mut self.output_content, format_args!("{}{}", sep, item));
+            let _ = std::fmt::Write::write_fmt(
+                &mut self.output_content,
+                format_args!("{}{}", sep, item),
+            );
         }
         self
     }
@@ -390,22 +420,38 @@ impl IO {
         self
     }
 
-    pub fn input_writeln_slice<T: std::fmt::Display>(&mut self, slice: &[T], sep: &str) -> &mut Self {
+    pub fn input_writeln_slice<T: std::fmt::Display>(
+        &mut self,
+        slice: &[T],
+        sep: &str,
+    ) -> &mut Self {
         self.input_writeln_sep(slice.iter(), sep)
     }
 
-    pub fn output_writeln_slice<T: std::fmt::Display>(&mut self, slice: &[T], sep: &str) -> &mut Self {
+    pub fn output_writeln_slice<T: std::fmt::Display>(
+        &mut self,
+        slice: &[T],
+        sep: &str,
+    ) -> &mut Self {
         self.output_writeln_sep(slice.iter(), sep)
     }
 
-    pub fn input_writeln_matrix<T: std::fmt::Display>(&mut self, matrix: &[Vec<T>], sep: &str) -> &mut Self {
+    pub fn input_writeln_matrix<T: std::fmt::Display>(
+        &mut self,
+        matrix: &[Vec<T>],
+        sep: &str,
+    ) -> &mut Self {
         for row in matrix {
             self.input_writeln_sep(row.iter(), sep);
         }
         self
     }
 
-    pub fn output_writeln_matrix<T: std::fmt::Display>(&mut self, matrix: &[Vec<T>], sep: &str) -> &mut Self {
+    pub fn output_writeln_matrix<T: std::fmt::Display>(
+        &mut self,
+        matrix: &[Vec<T>],
+        sep: &str,
+    ) -> &mut Self {
         for row in matrix {
             self.output_writeln_sep(row.iter(), sep);
         }
@@ -465,6 +511,7 @@ impl IO {
         Ok(())
     }
 
+    /// Flush both text buffers and byte buffers to their configured files.
     pub fn flush_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.log("flush_to_disk: start");
@@ -488,16 +535,12 @@ impl IO {
         Ok(())
     }
 
+    /// Return information captured from the most recent child-process execution.
     pub fn last_capture(&self) -> Option<&OutputCapture> {
         self.last_capture.as_ref()
     }
 
-    fn set_capture(
-        &mut self,
-        status: &std::process::ExitStatus,
-        stdout: Vec<u8>,
-        stderr: Vec<u8>,
-    ) {
+    fn set_capture(&mut self, status: &std::process::ExitStatus, stdout: Vec<u8>, stderr: Vec<u8>) {
         self.output_bytes = stdout.clone();
         self.output_content = String::from_utf8_lossy(&stdout).to_string();
         self.last_stderr = stderr.clone();
@@ -580,6 +623,7 @@ impl IO {
     }
 
     #[cfg(feature = "proc")]
+    /// Run an external program and store its stdout in the output buffer.
     pub fn output_gen(&mut self, program: &str) -> std::io::Result<()> {
         self.log("output_gen: start");
         let mut child = std::process::Command::new(program)
@@ -655,6 +699,7 @@ impl IO {
     }
 
     #[cfg(feature = "proc")]
+    /// Run an external program and enforce a timeout in milliseconds.
     pub fn output_gen_with_timeout(
         &mut self,
         program: &str,
@@ -698,6 +743,7 @@ impl IO {
     }
 
     #[cfg(all(feature = "parallel", feature = "proc"))]
+    /// Run the same external program for multiple [`IO`] instances in parallel.
     pub fn output_gen_parallel(ios: &mut [IO], program: &str) -> std::io::Result<()> {
         let program = program.to_string();
         let mut first_err: Option<std::io::Error> = None;
@@ -759,12 +805,16 @@ impl IO {
 
 /// Streaming writer interface for incremental output.
 pub trait StreamingWriter {
+    /// Write a value without a trailing newline.
     fn write_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()>;
+    /// Write a value followed by `\n`.
     fn writeln_item<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()>;
+    /// Write an iterator joined by `sep`.
     fn write_sep<I, T>(&mut self, items: I, sep: &str) -> std::io::Result<()>
     where
         I: IntoIterator<Item = T>,
         T: std::fmt::Display;
+    /// Flush buffered output.
     fn flush(&mut self) -> std::io::Result<()>;
 }
 
@@ -774,16 +824,19 @@ pub struct IOStream {
 }
 
 impl IOStream {
+    /// Write a value without a trailing newline.
     pub fn write<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
         use std::io::Write;
         write!(self.writer, "{}", s)
     }
 
+    /// Write a value followed by `\n`.
     pub fn writeln<S: std::fmt::Display>(&mut self, s: S) -> std::io::Result<()> {
         use std::io::Write;
         writeln!(self.writer, "{}", s)
     }
 
+    /// Write an iterator joined by `sep`.
     pub fn write_sep<I, T>(&mut self, items: I, sep: &str) -> std::io::Result<()>
     where
         I: IntoIterator<Item = T>,
@@ -800,6 +853,7 @@ impl IOStream {
         Ok(())
     }
 
+    /// Flush buffered output.
     pub fn flush(&mut self) -> std::io::Result<()> {
         use std::io::Write;
         self.writer.flush()
@@ -839,6 +893,7 @@ pub struct IOBatchBuilder {
 }
 
 impl IOBatchBuilder {
+    /// Create a batch builder rooted at `prefix`.
     pub fn new(prefix: String) -> Self {
         Self {
             prefix,

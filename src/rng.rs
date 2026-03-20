@@ -1,6 +1,13 @@
-﻿use rand::rngs::StdRng;
+//! Deterministic and platform-friendly random helpers.
+//!
+//! Use [`crate::rng::SeededRng`] when a single reproducible generator is enough, or
+//! [`crate::rng::RngStream`] when
+//! you want to derive multiple independent sub-generators from one base seed.
+
+use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 
+/// A reproducible random-number generator backed by [`StdRng`].
 pub struct SeededRng {
     rng: StdRng,
 }
@@ -14,16 +21,19 @@ fn splitmix64(mut x: u64) -> u64 {
 }
 
 impl SeededRng {
+    /// Create a deterministic RNG from a fixed seed.
     pub fn new(seed: u64) -> Self {
         Self {
             rng: StdRng::seed_from_u64(seed),
         }
     }
 
+    /// Borrow the underlying [`StdRng`] for custom sampling.
     pub fn rng(&mut self) -> &mut StdRng {
         &mut self.rng
     }
 
+    /// Sample a value from an inclusive range.
     pub fn gen_range<T>(&mut self, range: std::ops::RangeInclusive<T>) -> T
     where
         T: rand::distr::uniform::SampleUniform + Copy + PartialOrd,
@@ -32,12 +42,14 @@ impl SeededRng {
     }
 }
 
+/// Split a base seed into multiple reproducible RNG streams.
 pub struct RngStream {
     base_seed: u64,
     counter: u64,
 }
 
 impl RngStream {
+    /// Create a new RNG stream rooted at `seed`.
     pub fn new(seed: u64) -> Self {
         Self {
             base_seed: seed,
@@ -45,10 +57,12 @@ impl RngStream {
         }
     }
 
+    /// Derive a deterministic sub-RNG using an explicit stream identifier.
     pub fn fork(&self, stream_id: u64) -> SeededRng {
         SeededRng::new(splitmix64(self.base_seed ^ stream_id))
     }
 
+    /// Derive the next deterministic sub-RNG from the stream.
     pub fn next(&mut self) -> SeededRng {
         let seed = splitmix64(self.base_seed.wrapping_add(self.counter));
         self.counter = self.counter.wrapping_add(1);
@@ -56,6 +70,7 @@ impl RngStream {
     }
 }
 
+/// Generate a random `u64` on WebAssembly targets using `getrandom`.
 #[cfg(target_arch = "wasm32")]
 pub fn random_u64() -> u64 {
     let mut buf = [0u8; 8];
@@ -63,6 +78,7 @@ pub fn random_u64() -> u64 {
     u64::from_le_bytes(buf)
 }
 
+/// Generate a random `u64` on native targets.
 #[cfg(not(target_arch = "wasm32"))]
 pub fn random_u64() -> u64 {
     rand::random()

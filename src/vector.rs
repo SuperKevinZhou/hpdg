@@ -1,3 +1,18 @@
+//! Random vector and matrix helpers.
+//!
+//! This module is handy for generators that need points, tuples, matrices, or generic
+//! multi-dimensional integer data.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::vector::{IntRange, Vector};
+//!
+//! let rows = Vector::random_matrix(2, 3, IntRange::MinMax(1, 9));
+//! assert_eq!(rows.len(), 2);
+//! assert!(rows.iter().all(|row| row.len() == 3));
+//! ```
+
 use rand::Rng;
 use std::collections::HashSet;
 
@@ -12,7 +27,9 @@ pub enum VectorRandomMode {
 /// Integer range specification for each dimension.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IntRange {
+    /// Inclusive range `[0, max]`.
     Max(i64),
+    /// Inclusive range `[min, max]`.
     MinMax(i64, i64),
 }
 
@@ -28,13 +45,17 @@ impl From<(i64, i64)> for IntRange {
     }
 }
 
+/// Collection type returned by integer-vector generators.
 pub type IntVector = Vec<Vec<i64>>;
+/// Collection type returned by floating-point vector generators.
 pub type FloatVector = Vec<Vec<f64>>;
 
 /// Floating-point range specification for each dimension.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FloatRange {
+    /// Inclusive range `[0.0, max]`.
     Max(f64),
+    /// Inclusive range `[min, max]`.
     MinMax(f64, f64),
 }
 
@@ -188,7 +209,7 @@ impl Vector {
         result
     }
 
-    /// Convert a hashcode into a vector based on the provided ranges.
+    /// Convert an index into a vector based on the provided integer ranges.
     pub fn get_vector(position_range: &[IntRange], hashcode: u128) -> Vec<i64> {
         let ranges = normalize_int_ranges(position_range);
         let (offsets, lengths) = parse_int_ranges(&ranges);

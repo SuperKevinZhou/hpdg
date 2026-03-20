@@ -1,3 +1,16 @@
+//! Output-comparison utilities for local judging workflows.
+//!
+//! This module is useful when you want to compare a candidate solution against a standard
+//! solution, either from strings, files, or spawned child processes.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::compare::compare_strings_normalized;
+//!
+//! assert!(compare_strings_normalized("1  2\n3", "1 2\n3").is_ok());
+//! ```
+
 use std::error::Error;
 use std::fmt;
 use std::fs;
@@ -9,8 +22,11 @@ use std::thread;
 /// Describes a mismatch between expected and actual output.
 #[derive(Debug, Clone)]
 pub struct CompareMismatch {
+    /// 1-based line number where the mismatch was detected.
     pub line: usize,
+    /// Expected line content.
     pub expected: String,
+    /// Actual line content.
     pub actual: String,
 }
 
@@ -28,6 +44,7 @@ impl Error for CompareMismatch {}
 
 /// Custom output grader interface.
 pub trait Grader {
+    /// Compare `expected` and `actual`, returning a mismatch on failure.
     fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch>;
 }
 
@@ -75,10 +92,7 @@ pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismat
     Ok(())
 }
 
-pub fn compare_strings_normalized(
-    expected: &str,
-    actual: &str,
-) -> Result<(), CompareMismatch> {
+pub fn compare_strings_normalized(expected: &str, actual: &str) -> Result<(), CompareMismatch> {
     let expected = normalize_output(expected);
     let actual = normalize_output(actual);
     compare_strings(&expected, &actual)
@@ -133,8 +147,7 @@ pub fn compare_programs(
 ) -> Result<(), CompareMismatch> {
     let expected_out =
         run_program(expected_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
-    let actual_out =
-        run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
+    let actual_out = run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
     compare_strings(&expected_out, &actual_out)
 }
 
@@ -147,8 +160,7 @@ pub fn compare_programs_with_grader<G: Grader>(
 ) -> Result<(), CompareMismatch> {
     let expected_out =
         run_program(expected_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
-    let actual_out =
-        run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
+    let actual_out = run_program(actual_cmd, input).unwrap_or_else(|e| format!("<<error>> {}", e));
     grader.grade(&expected_out, &actual_out)
 }
 

@@ -1,48 +1,57 @@
-//! This is a module that supports some useful maths functions.
+//! Math helpers for number theory, combinatorics, digit tricks, and formatting.
+//!
+//! The functions in this module are intentionally pragmatic: they are designed for generator
+//! scripts and quick experimentation rather than as a full symbolic-math library.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::math::{binomial, is_prime, prime_sieve};
+//!
+//! assert!(is_prime(97));
+//! assert_eq!(binomial(5, 2), 10);
+//! assert_eq!(prime_sieve(10), vec![2, 3, 5, 7]);
+//! ```
 
 const DIGIT_FACT: [u64; 10] = [
-    1,          // 0!
-    1,          // 1!
-    2,          // 2!
-    6,          // 3!
-    24,         // 4!
-    120,        // 5!
-    720,        // 6!
-    5040,       // 7!
-    40320,      // 8!
-    362880,     // 9!
+    1,      // 0!
+    1,      // 1!
+    2,      // 2!
+    6,      // 3!
+    24,     // 4!
+    120,    // 5!
+    720,    // 6!
+    5040,   // 7!
+    40320,  // 8!
+    362880, // 9!
 ];
 
 pub const POW10: [u64; 20] = [
-    1,                      // 10^0
-    10,                     // 10^1
-    100,                    // 10^2
-    1000,                   // 10^3
-    10000,                  // 10^4
-    100000,                 // 10^5
-    1000000,                // 10^6
-    10000000,               // 10^7
-    100000000,              // 10^8
-    1000000000,             // 10^9
-    10000000000,            // 10^10
-    100000000000,           // 10^11
-    1000000000000,          // 10^12
-    10000000000000,         // 10^13
-    100000000000000,        // 10^14
-    1000000000000000,       // 10^15
-    10000000000000000,      // 10^16
-    100000000000000000,     // 10^17
-    1000000000000000000,    // 10^18
-    10000000000000000000,   // 10^19
+    1,                    // 10^0
+    10,                   // 10^1
+    100,                  // 10^2
+    1000,                 // 10^3
+    10000,                // 10^4
+    100000,               // 10^5
+    1000000,              // 10^6
+    10000000,             // 10^7
+    100000000,            // 10^8
+    1000000000,           // 10^9
+    10000000000,          // 10^10
+    100000000000,         // 10^11
+    1000000000000,        // 10^12
+    10000000000000,       // 10^13
+    100000000000000,      // 10^14
+    1000000000000000,     // 10^15
+    10000000000000000,    // 10^16
+    100000000000000000,   // 10^17
+    1000000000000000000,  // 10^18
+    10000000000000000000, // 10^19
 ];
 
 #[inline]
 fn digit_len(n: u64) -> u32 {
-    if n == 0 {
-        1
-    } else {
-        n.ilog10() + 1
-    }
+    if n == 0 { 1 } else { n.ilog10() + 1 }
 }
 
 /// Check if two numbers are permutations of each other.
@@ -52,19 +61,19 @@ pub fn is_perm(a: u64, b: u64) -> bool {
     } else if a == 0 || b == 0 {
         return false;
     }
-    
+
     if digit_len(a) != digit_len(b) {
         return false;
     }
-    
+
     let mut count = [0i32; 10];
-    
+
     let mut x = a;
     while x > 0 {
         count[(x % 10) as usize] += 1;
         x /= 10;
     }
-    
+
     let mut y = b;
     while y > 0 {
         let digit = (y % 10) as usize;
@@ -74,7 +83,7 @@ pub fn is_perm(a: u64, b: u64) -> bool {
         }
         y /= 10;
     }
-    
+
     true
 }
 
@@ -94,7 +103,7 @@ pub fn is_pal_string(s: String) -> bool {
     } else {
         let mut forward = s.char_indices();
         let mut backward = s.char_indices().rev();
-        
+
         while let (Some((i, f_char)), Some((j, b_char))) = (forward.next(), backward.next()) {
             if i >= j {
                 break;
@@ -127,14 +136,20 @@ pub fn is_pal_u64(n: u64) -> bool {
 }
 
 pub fn divisor_sum(n: u64) -> u64 {
-    if n == 0 { return 0; }
+    if n == 0 {
+        return 0;
+    }
 
     let mut i: u64 = 1;
     let mut sum: u64 = 0;
 
     while i * i <= n {
-        if n % i == 0 { sum += i + n / i; }
-        if i * i == n { sum -= i; }
+        if n % i == 0 {
+            sum += i + n / i;
+        }
+        if i * i == n {
+            sum -= i;
+        }
         i += 1;
     }
 
@@ -217,11 +232,7 @@ fn fib_pair(n: u64) -> (u64, u64) {
     let (a, b) = fib_pair(n / 2);
     let c = (a as u128 * ((2 * b - a) as u128)) as u64;
     let d = ((a as u128 * a as u128) + (b as u128 * b as u128)) as u64;
-    if n % 2 == 0 {
-        (c, d)
-    } else {
-        (d, c + d)
-    }
+    if n % 2 == 0 { (c, d) } else { (d, c + d) }
 }
 
 pub fn fibonacci(n: u64) -> u64 {
@@ -520,11 +531,7 @@ pub fn miu(x: u64) -> i32 {
             return 0;
         }
     }
-    if factors.len() % 2 == 0 {
-        1
-    } else {
-        -1
-    }
+    if factors.len() % 2 == 0 { 1 } else { -1 }
 }
 
 /// Convert a decimal number to the given base (2..=16).
@@ -553,18 +560,42 @@ pub fn n2words_list(num: u64) -> Vec<String> {
         "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
     ];
     let teens = [
-        "", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
-        "Eighteen", "Nineteen",
+        "",
+        "Eleven",
+        "Twelve",
+        "Thirteen",
+        "Fourteen",
+        "Fifteen",
+        "Sixteen",
+        "Seventeen",
+        "Eighteen",
+        "Nineteen",
     ];
     let tens = [
-        "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty",
-        "Ninety",
+        "", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety",
     ];
     let thousands = [
-        "", "Thousand", "Million", "Billion", "Trillion", "Quadrillion", "Quintillion",
-        "Sextillion", "Septillion", "Octillion", "Nonillion", "Decillion", "Undecillion",
-        "Duodecillion", "Tredecillion", "Quattuordecillion", "Sexdecillion",
-        "Septendecillion", "Octodecillion", "Novemdecillion", "Vigintillion",
+        "",
+        "Thousand",
+        "Million",
+        "Billion",
+        "Trillion",
+        "Quadrillion",
+        "Quintillion",
+        "Sextillion",
+        "Septillion",
+        "Octillion",
+        "Nonillion",
+        "Decillion",
+        "Undecillion",
+        "Duodecillion",
+        "Tredecillion",
+        "Quattuordecillion",
+        "Sexdecillion",
+        "Septendecillion",
+        "Octodecillion",
+        "Novemdecillion",
+        "Vigintillion",
     ];
 
     if num == 0 {
@@ -621,33 +652,33 @@ pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();
     }
-    
+
     if n.len() != s {
         return false;
     }
-    
+
     if s > 10 {
         return false;
     }
-    
+
     let bytes = n.as_bytes();
     let mut seen: u16 = 0;
-    
+
     for &byte in bytes {
         if !byte.is_ascii_digit() {
             return false;
         }
-        
+
         let digit = (byte - b'0') as u16;
         let bit = 1 << digit;
-        
+
         if seen & bit != 0 {
             return false;
         }
-        
+
         seen |= bit;
     }
-    
+
     if s == 10 {
         seen == 0x3FF
     } else {
@@ -664,18 +695,18 @@ pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
     if s == 0 || s > 10 {
         return false;
     }
-    
+
     if n < POW10[s - 1] || n >= POW10[s] {
         return false;
     }
-    
+
     let mut num = n;
     let mut seen = 0u16;
-    
+
     for _ in 0..s {
         let digit = (num % 10) as u8;
         num /= 10;
-        
+
         if digit > 9 {
             return false;
         }
@@ -683,14 +714,14 @@ pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
         if s < 10 && digit == 0 {
             return false;
         }
-        
+
         let bit = 1 << digit;
         if (seen & bit) != 0 {
             return false;
         }
         seen |= bit;
     }
-    
+
     if s == 10 {
         seen == 0x3FF
     } else {
@@ -703,25 +734,25 @@ pub fn is_pandigital_u64_default(n: u64) -> bool {
     if n < 123456789 || n > 987654321 {
         return false;
     }
-    
+
     let mut num = n;
     let mut seen = 0u16;
-    
+
     for _ in 0..9 {
         let digit = (num % 10) as u8;
         num /= 10;
-        
+
         if digit == 0 {
             return false;
         }
-        
+
         let bit = 1 << digit;
         if (seen & bit) != 0 {
             return false;
         }
         seen |= bit;
     }
-    
+
     seen == 0b1111111110
 }
 
@@ -786,10 +817,7 @@ mod tests {
     fn test_pal_list() {
         assert!(pal_list(0).is_empty());
         assert_eq!(pal_list(1), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        assert_eq!(
-            pal_list(2),
-            vec![11, 22, 33, 44, 55, 66, 77, 88, 99]
-        );
+        assert_eq!(pal_list(2), vec![11, 22, 33, 44, 55, 66, 77, 88, 99]);
         let pals3 = pal_list(3);
         assert_eq!(pals3.len(), 90);
         assert_eq!(pals3.first().copied(), Some(101));

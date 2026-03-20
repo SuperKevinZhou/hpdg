@@ -1,18 +1,43 @@
+//! Random string and text generators.
+//!
+//! The API in this module focuses on practical testcase generation instead of full natural
+//! language modeling. It supports fixed or ranged lengths, simplified regex-like patterns,
+//! dictionary sampling, and quick sentence/paragraph construction.
+//!
+//! # Example
+//!
+//! ```rust
+//! use hpdg::string::{SentenceConfig, StringGen};
+//!
+//! let mut cfg = SentenceConfig::default();
+//! cfg.sentence_terminators = ".".to_string();
+//! let sentence = StringGen::random_sentence(3, Some(&cfg));
+//! assert!(sentence.ends_with('.'));
+//! ```
+
 use rand::Rng;
 
+/// Lowercase Latin alphabet.
 pub const ALPHABET_SMALL: &str = "abcdefghijklmnopqrstuvwxyz";
+/// Uppercase Latin alphabet.
 pub const ALPHABET_CAPITAL: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+/// Combined lowercase and uppercase Latin alphabet.
 pub const ALPHABET: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+/// Decimal digits.
 pub const NUMBERS: &str = "0123456789";
+/// Default separators used when generating paragraphs.
 pub const SENTENCE_SEPARATORS: &str = ",,,,,,,;;:";
+/// Default sentence terminators.
 pub const SENTENCE_TERMINATORS: &str = "....!";
 
+/// Length specification accepted by many string-generation helpers.
 #[derive(Clone, Copy, Debug)]
 pub enum LengthRange {
     Exact(usize),
     Range(usize, usize),
 }
 
+/// High-level character mode used by [`StringGen::random_with_mode`].
 #[derive(Clone, Copy, Debug)]
 pub enum CharsetMode {
     Ascii,
@@ -75,10 +100,15 @@ pub struct StringGen;
 /// Configuration for sentence generation.
 #[derive(Clone, Debug)]
 pub struct SentenceConfig {
+    /// Length of each generated word.
     pub word_length_range: LengthRange,
+    /// Whether the first generated word should be capitalized.
     pub first_letter_uppercase: bool,
+    /// Character set used to build words.
     pub charset: String,
+    /// Candidate separators inserted between words.
     pub word_separators: String,
+    /// Candidate sentence terminators appended at the end.
     pub sentence_terminators: String,
 }
 
@@ -97,14 +127,23 @@ impl Default for SentenceConfig {
 /// Configuration for paragraph generation.
 #[derive(Clone, Debug)]
 pub struct ParagraphConfig {
+    /// Number of words per generated sentence.
     pub word_count_range: LengthRange,
+    /// Length of each generated word.
     pub word_length_range: LengthRange,
+    /// Whether the first word of a sentence should be capitalized.
     pub first_letter_uppercase: bool,
+    /// Character set used to build words.
     pub charset: String,
+    /// Candidate separators inserted between words.
     pub word_separators: String,
+    /// Candidate separators inserted between non-terminal sentences.
     pub sentence_separators: String,
+    /// Candidate sentence terminators.
     pub sentence_terminators: String,
+    /// Characters inserted between generated sentence fragments.
     pub sentence_joiners: String,
+    /// Probability that a sentence ends instead of continuing with a separator.
     pub termination_percentage: f64,
 }
 
@@ -233,7 +272,10 @@ impl StringGen {
         paragraph
     }
 
-    /// Generate a string that matches a simplified regex.
+    /// Generate a string that matches a simplified regex-like pattern.
+    ///
+    /// The supported syntax is intentionally lightweight and aimed at testcase generation,
+    /// not full regular-expression compatibility.
     pub fn random_regex(pattern: &str, limit: usize) -> String {
         let mut rng = rand::rng();
         let lim = if limit <= 1 { 10 } else { limit };
@@ -316,9 +358,21 @@ impl StringGen {
             let mut max = 1usize;
             if i < chars.len() {
                 match chars[i] {
-                    '*' => { min = 0; max = lim; i += 1; }
-                    '+' => { min = 1; max = lim; i += 1; }
-                    '?' => { min = 0; max = 1; i += 1; }
+                    '*' => {
+                        min = 0;
+                        max = lim;
+                        i += 1;
+                    }
+                    '+' => {
+                        min = 1;
+                        max = lim;
+                        i += 1;
+                    }
+                    '?' => {
+                        min = 0;
+                        max = 1;
+                        i += 1;
+                    }
                     '{' => {
                         let mut j = i + 1;
                         let mut num1 = String::new();
@@ -353,7 +407,11 @@ impl StringGen {
                 }
             }
 
-            let count = if min == max { min } else { rng.random_range(min..=max) };
+            let count = if min == max {
+                min
+            } else {
+                rng.random_range(min..=max)
+            };
             for _ in 0..count {
                 let idx = rng.random_range(0..charset.len());
                 out.push(charset[idx]);
@@ -396,10 +454,7 @@ impl StringGen {
     }
 
     /// Generate random strings with ASCII or Unicode modes.
-    pub fn random_with_mode(
-        length_range: impl Into<LengthRange>,
-        mode: CharsetMode,
-    ) -> String {
+    pub fn random_with_mode(length_range: impl Into<LengthRange>, mode: CharsetMode) -> String {
         let mut rng = rand::rng();
         let len_range = length_range.into();
         match mode {
@@ -411,7 +466,6 @@ impl StringGen {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

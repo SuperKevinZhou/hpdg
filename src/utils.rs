@@ -1,4 +1,14 @@
-﻿pub fn ati<I, T>(iter: I) -> Vec<i64>
+//! Small utility helpers used by generators and command-line entrypoints.
+//!
+//! This module intentionally mixes a few convenience functions that are handy when writing
+//! one-off testcase generators: shell-safe path escaping, line splitting, keyword-style
+//! argument parsing, and lightweight trait probes.
+
+use std::collections::HashMap;
+use std::env;
+
+/// Convert an iterator of integer-like values into a `Vec<i64>`.
+pub fn ati<I, T>(iter: I) -> Vec<i64>
 where
     I: IntoIterator<Item = T>,
     T: Into<i64>,
@@ -6,17 +16,19 @@ where
     iter.into_iter().map(|v| v.into()).collect()
 }
 
+/// Marker trait implemented for slice-like collection types.
 pub trait ListLike {}
 
 impl<T> ListLike for Vec<T> {}
 impl<T> ListLike for [T] {}
 impl<T, const N: usize> ListLike for [T; N] {}
 
-/// Check whether a value is list-like (Vec/array/slice).
+/// Check whether a value is list-like (`Vec`, array, or slice).
 pub fn list_like<T: ?Sized + ListLike>(_data: &T) -> bool {
     true
 }
 
+/// Marker trait implemented for integer primitives.
 pub trait IntLike {}
 
 impl IntLike for i8 {}
@@ -35,7 +47,7 @@ pub fn int_like<T: IntLike>(_data: &T) -> bool {
     true
 }
 
-/// Split text into trimmed lines and drop trailing blanks.
+/// Split text into trimmed lines and drop trailing blank lines.
 pub fn strtolines(input: &str) -> Vec<String> {
     let mut lines: Vec<String> = input.lines().map(|l| l.trim_end().to_string()).collect();
     while lines.last().map(|s| s.is_empty()).unwrap_or(false) {
@@ -44,21 +56,20 @@ pub fn strtolines(input: &str) -> Vec<String> {
     lines
 }
 
-/// Convert data into a String.
+/// Convert any displayable value into a `String`.
 pub fn make_unicode<T: ToString>(data: T) -> String {
     data.to_string()
 }
 
-use std::collections::HashMap;
-use std::env;
-
-/// Argument specification for unpack_kwargs.
+/// Keyword-only argument specification used by [`unpack_kwargs`].
 pub enum ArgSpec<T> {
+    /// A required key.
     Required(&'static str),
+    /// An optional key together with its default value.
     Optional(&'static str, T),
 }
 
-/// Parse keyword-style arguments from a map.
+/// Parse keyword-style arguments from a map into a validated result map.
 pub fn unpack_kwargs<T: Clone>(
     funcname: &str,
     kwargs: &HashMap<String, T>,
@@ -94,7 +105,7 @@ pub fn unpack_kwargs<T: Clone>(
     Ok(result)
 }
 
-/// Parse CLI arguments and return optional seed.
+/// Parse CLI arguments and return the first `--randseed=...` value if present.
 pub fn process_args() -> Option<u64> {
     for arg in env::args() {
         if let Some(seed) = arg.strip_prefix("--randseed=") {
@@ -106,7 +117,7 @@ pub fn process_args() -> Option<u64> {
     None
 }
 
-/// Escape a path for shell usage.
+/// Escape a path for shell usage on the current platform.
 pub fn escape_path(path: &str) -> String {
     if cfg!(windows) {
         format!("\"{}\"", path.replace('\\', "/"))
@@ -114,7 +125,6 @@ pub fn escape_path(path: &str) -> String {
         format!("'{}'", path.replace('\'', "\\'"))
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -379,6 +379,7 @@ impl SwitchGraph {
             .collect()
     }
 
+    /// Construct a directed multigraph from `(out_degree, in_degree)` pairs.
     pub fn from_directed_degree_sequence(
         degree_sequence: &[(usize, usize)],
         self_loop: bool,
@@ -447,12 +448,15 @@ impl SwitchGraph {
         Ok(graph)
     }
 
+    /// Convenience wrapper for directed degree-sequence construction without
+    /// self-loops or repeated edges.
     pub fn from_directed_degree_sequence_simple(
         degree_sequence: &[(usize, usize)],
     ) -> Result<Self, &'static str> {
         Self::from_directed_degree_sequence(degree_sequence, false, false)
     }
 
+    /// Construct an undirected multigraph from degree counts.
     pub fn from_undirected_degree_sequence(
         degree_sequence: &[usize],
         self_loop: bool,
@@ -522,6 +526,7 @@ impl SwitchGraph {
         Ok(SwitchGraph::new(edges, false))
     }
 
+    /// Validate a directed degree sequence before construction.
     pub fn validate_directed_degree_sequence(
         degree_sequence: &[(usize, usize)],
     ) -> Result<(), &'static str> {
@@ -552,6 +557,7 @@ impl SwitchGraph {
         Ok(())
     }
 
+    /// Validate an undirected degree sequence before construction.
     pub fn validate_undirected_degree_sequence(
         degree_sequence: &[usize],
     ) -> Result<(), &'static str> {
@@ -562,26 +568,32 @@ impl SwitchGraph {
         Ok(())
     }
 
+    /// Convenience wrapper for undirected degree-sequence construction without
+    /// self-loops or repeated edges.
     pub fn from_undirected_degree_sequence_simple(
         degree_sequence: &[usize],
     ) -> Result<Self, &'static str> {
         Self::from_undirected_degree_sequence(degree_sequence, false, false)
     }
 
+    /// Iterate over edges, repeating parallel edges according to multiplicity.
     pub fn iter_edges(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         self.edges
             .iter()
             .flat_map(|(&(u, v), &count)| std::iter::repeat_n((u, v), count))
     }
 
+    /// Iterate over unique edge endpoints, ignoring multiplicity.
     pub fn iter_edges_unique(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
         self.edges.keys().cloned()
     }
 
+    /// Count edges including multiplicity.
     pub fn edge_count(&self) -> usize {
         self.edges.values().sum()
     }
 
+    /// Count unique endpoint pairs, ignoring multiplicity.
     pub fn edge_count_unique(&self) -> usize {
         self.edges.len()
     }
@@ -768,6 +780,7 @@ impl Graph {
 }
 
 impl Graph {
+    /// Iterate over visible edges, counting undirected edges only once.
     pub fn iter_edges(&self) -> impl Iterator<Item = &Edge> {
         self.edges
             .values()
@@ -775,10 +788,12 @@ impl Graph {
             .filter(|e| e.v >= e.u || self.directed)
     }
 
+    /// Iterate over every stored adjacency entry.
     pub fn iter_edges_all(&self) -> impl Iterator<Item = &Edge> {
         self.edges.values().flat_map(|v| v.iter())
     }
 
+    /// Mutably iterate over visible edges, counting undirected edges only once.
     pub fn iter_edges_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
         self.edges
             .values_mut()
@@ -786,6 +801,7 @@ impl Graph {
             .filter(|e| e.v >= e.u || self.directed)
     }
 
+    /// Mutably iterate over every stored adjacency entry.
     pub fn iter_edges_all_mut(&mut self) -> impl Iterator<Item = &mut Edge> {
         self.edges.values_mut().flat_map(|v| v.iter_mut())
     }
@@ -853,6 +869,7 @@ impl Graph {
         self.add_edge(u, v, Some(w));
     }
 
+    /// Insert multiple edges using a custom weight generator.
     pub fn add_edges_with_weight<I, F>(&mut self, edges: I, mut weight_gen: F)
     where
         I: IntoIterator<Item = (usize, usize)>,
@@ -969,6 +986,7 @@ impl Graph {
         buf.join("\n")
     }
 
+    /// Render the graph with a custom edge formatter closure.
     pub fn to_string_with<F>(
         &self,
         shuffle: bool,
@@ -981,6 +999,7 @@ impl Graph {
         self.to_string(shuffle, line_reserve, Some(Box::new(edge_display_function)))
     }
 
+    /// Shuffle the internal edge order of each adjacency list.
     pub fn shuffle_edges(&mut self) {
         let mut rng = rng();
         for edges in self.edges.values_mut() {
@@ -1012,6 +1031,7 @@ impl Graph {
         graph
     }
 
+    /// Return an edge list where undirected edges are randomly oriented.
     pub fn edges_random_oriented(&self) -> Vec<Edge> {
         let mut rng = rng();
         let mut edges: Vec<Edge> = self.iter_edges().cloned().collect();
@@ -1027,6 +1047,7 @@ impl Graph {
         edges
     }
 
+    /// Rebuild the graph by remapping each node label through `f`.
     pub fn relabel<F>(&self, mut f: F) -> Graph
     where
         F: FnMut(usize) -> usize,
@@ -1045,10 +1066,12 @@ impl Graph {
         graph
     }
 
+    /// Shift every node label by `offset`.
     pub fn offset_labels(&self, offset: usize) -> Graph {
         self.relabel(|node| node + offset)
     }
 
+    /// Extract the induced subgraph on the given node set.
     pub fn subgraph_by_nodes(&self, nodes: &std::collections::HashSet<usize>) -> Graph {
         let mut graph = Graph::with_nodes(nodes.iter().cloned(), self.directed);
         for edge in self.iter_edges_all() {
@@ -1060,6 +1083,7 @@ impl Graph {
         graph
     }
 
+    /// Build a graph containing only edges accepted by `predicate`.
     pub fn filter_edges<F>(&self, mut predicate: F) -> Graph
     where
         F: FnMut(&Edge) -> bool,
@@ -1075,6 +1099,7 @@ impl Graph {
         graph
     }
 
+    /// Remove repeated edges while keeping one copy of each unique edge.
     pub fn dedup_edges(&mut self) {
         for edges in self.edges.values_mut() {
             let mut seen: std::collections::HashSet<(usize, usize, i64, bool)> =
@@ -1091,6 +1116,7 @@ impl Graph {
         }
     }
 
+    /// Normalize undirected graphs so every edge is stored with `u <= v`, then mirror again.
     pub fn normalize_undirected(&mut self) {
         if self.directed {
             return;
@@ -1149,6 +1175,9 @@ impl fmt::Display for Graph {
 
 impl Graph {
     /// Generate a random tree.
+    ///
+    /// The `chain` and `flower` parameters bias how many edges are reserved for a path-like
+    /// prefix and a star-like prefix before the remaining nodes are attached randomly.
     pub fn tree(
         point_count: usize,
         chain: f64,
@@ -1254,6 +1283,9 @@ impl Graph {
     }
 
     /// Generate a binary tree on `point_count` nodes.
+    ///
+    /// The `left` and `right` parameters bias whether a new node is attached as a left child
+    /// or right child when both choices are available.
     pub fn binary_tree(
         point_count: usize,
         left: f64,
@@ -1319,6 +1351,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a binary tree where left and right edges can use different weight policies.
     pub fn binary_tree_with_side_weights(
         point_count: usize,
         left: f64,
@@ -1389,6 +1422,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a binary tree with full control over edge weights based on `(parent, child)`.
     pub fn binary_tree_with_weight_gen<F>(
         point_count: usize,
         left: f64,
@@ -1445,6 +1479,9 @@ impl Graph {
     }
 
     /// Generate a random graph with the requested edge count.
+    ///
+    /// Set `self_loop` and `repeated_edges` to control whether loops and parallel edges are
+    /// allowed. Weighted graphs can be produced either by `weight_limit` or `weight_gen`.
     pub fn graph(
         point_count: usize,
         edge_count: usize,
@@ -1522,6 +1559,7 @@ impl Graph {
         )
     }
 
+    /// Convenience wrapper for weighted random graph generation with a fixed weight range.
     pub fn graph_with_weight_limit(
         point_count: usize,
         edge_count: usize,
@@ -1642,6 +1680,10 @@ impl Graph {
         graph
     }
 
+    /// Generate an approximate `k`-regular graph by random stub pairing.
+    ///
+    /// For directed graphs this samples `k` outgoing edges per node; for undirected graphs
+    /// this pairs shuffled stubs and may be only approximate when invalid pairs are skipped.
     pub fn k_regular_approx(
         point_count: usize,
         k: usize,
@@ -1689,6 +1731,8 @@ impl Graph {
     }
 
     /// Generate a random DAG.
+    ///
+    /// Edges are oriented from smaller labels to larger labels so the result is acyclic.
     pub fn dag(
         point_count: usize,
         edge_count: usize,
@@ -1807,6 +1851,9 @@ impl Graph {
     }
 
     /// Generate a connected graph.
+    ///
+    /// This starts from a random tree and then adds random extra edges until `edge_count`
+    /// visible edges are present.
     pub fn connected(
         point_count: usize,
         edge_count: usize,
@@ -1940,6 +1987,8 @@ impl Graph {
     }
 
     /// Generate a forest.
+    ///
+    /// The result contains exactly `tree_count` connected components.
     pub fn forest(
         point_count: usize,
         tree_count: usize,
@@ -2003,6 +2052,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a forest and then duplicate randomly chosen edges `repeat_times` times.
     pub fn forest_with_repeats(
         point_count: usize,
         tree_count: usize,
@@ -2031,6 +2081,7 @@ impl Graph {
         graph
     }
 
+    /// Graph-level wrapper around [`SwitchGraph::from_directed_degree_sequence`].
     pub fn from_directed_degree_sequence(
         degree_sequence: &[(usize, usize)],
         self_loop: bool,
@@ -2045,6 +2096,7 @@ impl Graph {
         Ok(graph)
     }
 
+    /// Graph-level wrapper around [`SwitchGraph::from_undirected_degree_sequence`].
     pub fn from_undirected_degree_sequence(
         degree_sequence: &[usize],
         self_loop: bool,
@@ -2093,6 +2145,7 @@ impl Graph {
         }
     }
 
+    /// Validate generic graph-generation parameters before sampling edges.
     pub fn validate_graph_params(
         point_count: usize,
         edge_count: usize,
@@ -2109,6 +2162,7 @@ impl Graph {
         }
     }
 
+    /// Estimate the binomial coefficient `C(n, k)` in floating-point form.
     pub fn estimate_comb(n: usize, k: usize) -> f64 {
         if k > n {
             return 0.0;
@@ -2124,6 +2178,7 @@ impl Graph {
         res
     }
 
+    /// Estimate the maximum possible edge count for the given graph type.
     pub fn estimate_upperbound(point_count: usize, directed: bool, self_loop: bool) -> f64 {
         Graph::max_edge_count(point_count, directed, self_loop) as f64
     }
@@ -2144,6 +2199,7 @@ impl Graph {
         graph
     }
 
+    /// Generate a configurable SPFA-stressing graph with extra shortcut edges.
     pub fn hack_spfa_with_options(
         point_count: usize,
         forward_weight: i64,
@@ -2206,6 +2262,7 @@ impl<T: Clone> GraphMatrix<T> {
         self.matrix.iter().map(|row| row.as_slice())
     }
 
+    /// Mutably iterate over matrix rows.
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut [T]> {
         self.matrix.iter_mut().map(|row| row.as_mut_slice())
     }

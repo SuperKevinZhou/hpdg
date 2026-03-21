@@ -87,6 +87,7 @@ pub fn is_perm(a: u64, b: u64) -> bool {
     true
 }
 
+/// Check whether a string reads the same forward and backward.
 pub fn is_pal_string(s: String) -> bool {
     if s.is_ascii() {
         let bytes = s.as_bytes();
@@ -116,6 +117,7 @@ pub fn is_pal_string(s: String) -> bool {
     }
 }
 
+/// Check whether a non-negative integer is a decimal palindrome.
 pub fn is_pal_u64(n: u64) -> bool {
     if n == 0 {
         return true;
@@ -135,6 +137,7 @@ pub fn is_pal_u64(n: u64) -> bool {
     x == reversed || x == reversed / 10
 }
 
+/// Compute the sum of all positive divisors of `n`.
 pub fn divisor_sum(n: u64) -> u64 {
     if n == 0 {
         return 0;
@@ -156,10 +159,12 @@ pub fn divisor_sum(n: u64) -> u64 {
     sum
 }
 
+/// Alias for [`divisor_sum`].
 pub fn d(n: u64) -> u64 {
     divisor_sum(n)
 }
 
+/// Generate all positive decimal palindromes with exactly `k` digits.
 pub fn pal_list(k: usize) -> Vec<u64> {
     if k == 0 {
         return Vec::new();
@@ -189,6 +194,7 @@ pub fn pal_list(k: usize) -> Vec<u64> {
     res
 }
 
+/// Sum the factorial of each decimal digit of `n`.
 pub fn sof_digits(n: u64) -> u64 {
     if n == 0 {
         return DIGIT_FACT[0];
@@ -203,6 +209,7 @@ pub fn sof_digits(n: u64) -> u64 {
     sum
 }
 
+/// Sum the squares of the decimal digits of `n`.
 pub fn sos_digits(n: u64) -> u64 {
     let mut x = n;
     let mut sum = 0u64;
@@ -214,6 +221,7 @@ pub fn sos_digits(n: u64) -> u64 {
     sum
 }
 
+/// Sum `digit^e` over all decimal digits of `n`.
 pub fn pow_digits(n: u64, e: u32) -> u64 {
     let mut x = n;
     let mut sum = 0u64;
@@ -235,10 +243,12 @@ fn fib_pair(n: u64) -> (u64, u64) {
     if n % 2 == 0 { (c, d) } else { (d, c + d) }
 }
 
+/// Compute the `n`th Fibonacci number using fast doubling.
 pub fn fibonacci(n: u64) -> u64 {
     fib_pair(n).0
 }
 
+/// Generate the first `n` Fibonacci numbers starting from `F(0)`.
 pub fn fibonacci_list(n: usize) -> Vec<u64> {
     let mut res = Vec::with_capacity(n);
     let mut a = 0u64;
@@ -252,6 +262,7 @@ pub fn fibonacci_list(n: usize) -> Vec<u64> {
     res
 }
 
+/// Generate Fibonacci numbers from index `start` through `end` (inclusive).
 pub fn fibonacci_range(start: u64, end: u64) -> Vec<u64> {
     if start > end {
         return Vec::new();
@@ -270,6 +281,7 @@ pub fn fibonacci_range(start: u64, end: u64) -> Vec<u64> {
     res
 }
 
+/// Check primality with trial division.
 pub fn is_prime(n: u64) -> bool {
     if n < 2 {
         return false;
@@ -317,6 +329,7 @@ fn miller_rabin_pass(a: u64, s: u64, d: u64, n: u64) -> bool {
     false
 }
 
+/// Probabilistic primality check using a small Miller-Rabin base set.
 pub fn miller_rabin(n: u64, repeat_time: u32) -> bool {
     if n < 4 {
         return n == 2 || n == 3;
@@ -351,6 +364,7 @@ pub fn miller_rabin(n: u64, repeat_time: u32) -> bool {
     true
 }
 
+/// Prime-factorize `n` into `(prime, exponent)` pairs.
 pub fn factor(mut n: u64) -> Vec<(u64, u32)> {
     let mut res = Vec::new();
     if n < 2 {
@@ -648,6 +662,9 @@ pub fn n2words(num: u64) -> String {
     n2words_list(num).join(" ")
 }
 
+/// Check whether `n` uses each required decimal digit exactly once.
+///
+/// For `s < 10`, this expects digits `1..=s`. For `s == 10`, this expects `0..=9`.
 pub fn is_pandigital(n: &str, s: usize) -> bool {
     if s == 0 {
         return n.is_empty();
@@ -686,11 +703,13 @@ pub fn is_pandigital(n: &str, s: usize) -> bool {
     }
 }
 
+/// Display a value and test it with [`is_pandigital`].
 pub fn is_pandigital_num<T: std::fmt::Display>(n: T, s: usize) -> bool {
     is_pandigital(&n.to_string(), s)
 }
 
 #[inline]
+/// Integer-specialized pandigital check without allocating a string.
 pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
     if s == 0 || s > 10 {
         return false;
@@ -730,6 +749,7 @@ pub fn is_pandigital_u64(n: u64, s: usize) -> bool {
 }
 
 #[inline]
+/// Check whether `n` is a classic 1-to-9 pandigital integer.
 pub fn is_pandigital_u64_default(n: u64) -> bool {
     if n < 123456789 || n > 987654321 {
         return false;
@@ -1027,6 +1047,10 @@ mod tests {
     }
 }
 
+/// Generic palindrome helper for numbers and strings.
+///
+/// Numeric-looking values are routed through [`is_pal_u64`] for efficiency; everything else
+/// falls back to [`is_pal_string`].
 pub fn is_palindromic<T: ToString>(v: T) -> bool {
     let s = v.to_string();
     if s.chars().all(|c| c.is_ascii_digit()) {

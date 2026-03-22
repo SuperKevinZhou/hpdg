@@ -23,7 +23,12 @@ fn main() {
     io.input_writeln(format!("{}", g));
     io.input_writeln(vecs.len());
     for v in vecs {
-        io.input_writeln(v.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(" "));
+        io.input_writeln(
+            v.iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>()
+                .join(" "),
+        );
     }
     io.input_writeln(sentence);
 

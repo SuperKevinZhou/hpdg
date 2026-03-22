@@ -527,8 +527,8 @@ mod tests {
     #[test]
     fn test_random_with_mode() {
         let ascii = StringGen::random_with_mode(5, CharsetMode::Ascii);
-        assert!(ascii.chars().all(|c| c.is_ascii()));
+        assert!(ascii.is_ascii());
         let unicode = StringGen::random_with_mode(5, CharsetMode::Unicode);
-        assert!(unicode.chars().any(|c| !c.is_ascii()));
+        assert!(!unicode.is_ascii());
     }
 }

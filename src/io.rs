@@ -170,109 +170,128 @@ impl IO {
         }
     }
 
+    /// Override the full input file path.
     pub fn input_file(&mut self, input_file: String) -> &mut Self {
         self.input_file = Self::normalize_path(&input_file);
         self
     }
 
+    /// Override the full output file path.
     pub fn output_file(&mut self, output_file: String) -> &mut Self {
         self.output_file = Self::normalize_path(&output_file);
         self
     }
 
+    /// Set the base file prefix and rebuild derived filenames.
     pub fn file_prefix(&mut self, file_prefix: String) -> &mut Self {
         self.file_prefix = file_prefix;
         self.rebuild_filenames();
         self
     }
 
+    /// Add a prefix in front of the input filename.
     pub fn input_prefix(&mut self, input_prefix: String) -> &mut Self {
         self.input_prefix = Some(input_prefix);
         self.rebuild_filenames();
         self
     }
 
+    /// Add a prefix in front of the output filename.
     pub fn output_prefix(&mut self, output_prefix: String) -> &mut Self {
         self.output_prefix = Some(output_prefix);
         self.rebuild_filenames();
         self
     }
 
+    /// Remove any custom input filename prefix.
     pub fn clear_input_prefix(&mut self) -> &mut Self {
         self.input_prefix = None;
         self.rebuild_filenames();
         self
     }
 
+    /// Remove any custom output filename prefix.
     pub fn clear_output_prefix(&mut self) -> &mut Self {
         self.output_prefix = None;
         self.rebuild_filenames();
         self
     }
 
+    /// Attach a numeric testcase id to derived filenames.
     pub fn data_id(&mut self, data_id: usize) -> &mut Self {
         self.data_id = Some(data_id);
         self.rebuild_filenames();
         self
     }
 
+    /// Set the separator placed before the testcase id.
     pub fn data_id_separator(&mut self, separator: String) -> &mut Self {
         self.data_id_separator = separator;
         self.rebuild_filenames();
         self
     }
 
+    /// Set zero-padding width for the testcase id.
     pub fn data_id_width(&mut self, width: Option<usize>) -> &mut Self {
         self.data_id_width = width;
         self.rebuild_filenames();
         self
     }
 
+    /// Remove the testcase id from derived filenames.
     pub fn clear_data_id(&mut self) -> &mut Self {
         self.data_id = None;
         self.rebuild_filenames();
         self
     }
 
+    /// Change the logical input suffix used when rebuilding filenames.
     pub fn input_suffix(&mut self, input_suffix: String) -> &mut Self {
         self.input_suffix = input_suffix.clone();
         self.rebuild_filenames();
         self
     }
 
+    /// Change the logical output suffix used when rebuilding filenames.
     pub fn output_suffix(&mut self, output_suffix: String) -> &mut Self {
         self.output_suffix = output_suffix.clone();
         self.rebuild_filenames();
         self
     }
 
+    /// Change the file extension used by the input file.
     pub fn input_extension(&mut self, input_extension: String) -> &mut Self {
         self.input_suffix = input_extension;
         self.rebuild_filenames();
         self
     }
 
+    /// Change the file extension used by the output file.
     pub fn output_extension(&mut self, output_extension: String) -> &mut Self {
         self.output_suffix = output_extension;
         self.rebuild_filenames();
         self
     }
 
+    /// Enable or disable automatic directory creation before writing files.
     pub fn auto_create_dirs(&mut self, enabled: bool) -> &mut Self {
         self.auto_create_dirs = enabled;
         self
     }
 
+    /// Enable or disable cleanup of existing files before writing.
     pub fn auto_clean_files(&mut self, enabled: bool) -> &mut Self {
         self.auto_clean_files = enabled;
         self
     }
 
+    /// Install a lightweight text logger callback.
     pub fn logger(&mut self, logger: Option<fn(&str)>) -> &mut Self {
         self.logger = logger;
         self
     }
 
+    /// Allow or forbid overwriting already existing target files.
     pub fn allow_overwrite(&mut self, enabled: bool) -> &mut Self {
         self.allow_overwrite = enabled;
         self
@@ -338,6 +357,7 @@ impl IO {
         self
     }
 
+    /// Write an iterator into the input buffer joined by `sep`.
     pub fn input_write_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -356,6 +376,7 @@ impl IO {
         self
     }
 
+    /// Write an iterator into the output buffer joined by `sep`.
     pub fn output_write_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -374,6 +395,7 @@ impl IO {
         self
     }
 
+    /// Write a separator-joined iterator to the input buffer and append `\n`.
     pub fn input_writeln_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -384,6 +406,7 @@ impl IO {
         self
     }
 
+    /// Write a separator-joined iterator to the output buffer and append `\n`.
     pub fn output_writeln_sep<I, T>(&mut self, items: I, sep: &str) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -394,6 +417,7 @@ impl IO {
         self
     }
 
+    /// Format an iterator with a custom [`Formatter`] and write it to the input buffer.
     pub fn input_write_with<I, T>(&mut self, formatter: &dyn Formatter, items: I) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -407,6 +431,7 @@ impl IO {
         self
     }
 
+    /// Format an iterator with a custom [`Formatter`] and write it to the output buffer.
     pub fn output_write_with<I, T>(&mut self, formatter: &dyn Formatter, items: I) -> &mut Self
     where
         I: IntoIterator<Item = T>,
@@ -420,6 +445,7 @@ impl IO {
         self
     }
 
+    /// Write a slice to the input buffer as one line separated by `sep`.
     pub fn input_writeln_slice<T: std::fmt::Display>(
         &mut self,
         slice: &[T],
@@ -428,6 +454,7 @@ impl IO {
         self.input_writeln_sep(slice.iter(), sep)
     }
 
+    /// Write a slice to the output buffer as one line separated by `sep`.
     pub fn output_writeln_slice<T: std::fmt::Display>(
         &mut self,
         slice: &[T],
@@ -436,6 +463,7 @@ impl IO {
         self.output_writeln_sep(slice.iter(), sep)
     }
 
+    /// Write a matrix to the input buffer, one row per line.
     pub fn input_writeln_matrix<T: std::fmt::Display>(
         &mut self,
         matrix: &[Vec<T>],
@@ -447,6 +475,7 @@ impl IO {
         self
     }
 
+    /// Write a matrix to the output buffer, one row per line.
     pub fn output_writeln_matrix<T: std::fmt::Display>(
         &mut self,
         matrix: &[Vec<T>],
@@ -458,52 +487,61 @@ impl IO {
         self
     }
 
+    /// Clear both textual and binary input buffers.
     pub fn input_clear(&mut self) -> &mut Self {
         self.input_content.clear();
         self.input_bytes.clear();
         self
     }
 
+    /// Clear both textual and binary output buffers.
     pub fn output_clear(&mut self) -> &mut Self {
         self.output_content.clear();
         self.output_bytes.clear();
         self
     }
 
+    /// Append raw bytes to the input byte buffer.
     pub fn input_write_bytes(&mut self, bytes: &[u8]) -> &mut Self {
         self.input_bytes.extend_from_slice(bytes);
         self
     }
 
+    /// Append raw bytes to the output byte buffer.
     pub fn output_write_bytes(&mut self, bytes: &[u8]) -> &mut Self {
         self.output_bytes.extend_from_slice(bytes);
         self
     }
 
+    /// Flush the textual input buffer to the configured input file.
     pub fn flush_input_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.input_file)?;
         std::fs::write(&self.input_file, &self.input_content)
     }
 
+    /// Flush the textual output buffer to the configured output file.
     pub fn flush_output_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.output_file)?;
         std::fs::write(&self.output_file, &self.output_content)
     }
 
+    /// Flush the binary input buffer to the configured input file.
     pub fn flush_input_bytes_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.input_file)?;
         std::fs::write(&self.input_file, &self.input_bytes)
     }
 
+    /// Flush the binary output buffer to the configured output file.
     pub fn flush_output_bytes_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.output_file)?;
         std::fs::write(&self.output_file, &self.output_bytes)
     }
 
+    /// Flush both binary buffers to disk.
     pub fn flush_bytes_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.flush_input_bytes_to_disk()?;
@@ -521,6 +559,7 @@ impl IO {
         Ok(())
     }
 
+    /// Fallible wrapper around [`IO::flush_to_disk`] using [`IOError`].
     pub fn flush_to_disk_result(&self) -> IOResult<()> {
         self.flush_to_disk().map_err(IOError::from)
     }
@@ -598,12 +637,14 @@ impl IO {
         Ok(())
     }
 
+    /// Remove the currently configured input and output files if they exist.
     pub fn cleanup_files(&self) -> std::io::Result<()> {
         let _ = std::fs::remove_file(&self.input_file);
         let _ = std::fs::remove_file(&self.output_file);
         Ok(())
     }
 
+    /// Open a streaming writer for the configured input file.
     pub fn open_input_stream(&self) -> std::io::Result<IOStream> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.input_file)?;
@@ -613,6 +654,7 @@ impl IO {
         })
     }
 
+    /// Open a streaming writer for the configured output file.
     pub fn open_output_stream(&self) -> std::io::Result<IOStream> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.output_file)?;
@@ -645,11 +687,13 @@ impl IO {
     }
 
     #[cfg(feature = "proc")]
+    /// Fallible wrapper around [`IO::output_gen`] using [`IOError`].
     pub fn output_gen_result(&mut self, program: &str) -> IOResult<()> {
         self.output_gen(program).map_err(IOError::from)
     }
 
     #[cfg(feature = "proc")]
+    /// Run a program with the current input buffer and return its stdout as a `String`.
     pub fn output_gen_string_only(&self, program: &str) -> std::io::Result<String> {
         let mut child = std::process::Command::new(program)
             .stdin(std::process::Stdio::piped())
@@ -668,6 +712,7 @@ impl IO {
     }
 
     #[cfg(feature = "proc")]
+    /// Run an external program using the generated input/output files directly.
     pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
         self.log("output_gen_with_files: start");
         self.flush_input_to_disk()?;
@@ -709,6 +754,7 @@ impl IO {
     }
 
     #[cfg(feature = "proc")]
+    /// Run an external program with file-based I/O and enforce a timeout.
     pub fn output_gen_with_files_timeout(
         &mut self,
         program: &str,
@@ -905,36 +951,43 @@ impl IOBatchBuilder {
         }
     }
 
+    /// Set the explicit testcase ids that should be generated.
     pub fn data_ids<I: IntoIterator<Item = usize>>(mut self, ids: I) -> Self {
         self.data_ids = ids.into_iter().collect();
         self
     }
 
+    /// Use an inclusive numeric range of testcase ids.
     pub fn range(mut self, start: usize, end_inclusive: usize) -> Self {
         self.data_ids = (start..=end_inclusive).collect();
         self
     }
 
+    /// Set the input suffix for every generated [`IO`] value.
     pub fn input_suffix(mut self, input_suffix: String) -> Self {
         self.input_suffix = input_suffix;
         self
     }
 
+    /// Set the output suffix for every generated [`IO`] value.
     pub fn output_suffix(mut self, output_suffix: String) -> Self {
         self.output_suffix = output_suffix;
         self
     }
 
+    /// Set the separator inserted before each testcase id.
     pub fn data_id_separator(mut self, separator: String) -> Self {
         self.data_id_separator = separator;
         self
     }
 
+    /// Set zero-padding width for every testcase id in the batch.
     pub fn data_id_width(mut self, width: Option<usize>) -> Self {
         self.data_id_width = width;
         self
     }
 
+    /// Materialize the configured batch as a list of [`IO`] helpers.
     pub fn build(self) -> Vec<IO> {
         self.data_ids
             .into_iter()

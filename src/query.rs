@@ -102,6 +102,9 @@ fn join_vec(values: &[i64]) -> String {
 
 impl MixedRangeQuery {
     /// Generate random mixed update/query operations.
+    ///
+    /// `big_query` biases sampling toward longer intervals, while `update_ratio` controls
+    /// how often an operation is tagged as [`QueryOp::Update`].
     pub fn random(
         num: usize,
         position_range: &[RangeLimit],
@@ -126,6 +129,8 @@ impl MixedRangeQuery {
     }
 
     /// Convert mixed queries to a newline-separated string.
+    ///
+    /// Each line is rendered as `U l... r...` or `Q l... r...`.
     pub fn to_string(&self) -> String {
         let mut lines = Vec::with_capacity(self.result.len());
         for (op, l, r) in &self.result {
@@ -162,6 +167,10 @@ impl<W> RangeQuery<W> {
 }
 
 impl RangeQuery<()> {
+    /// Generate a single unweighted query.
+    ///
+    /// The returned tuple is `(left, right, ())`, where `left` and `right` are vectors for
+    /// multi-dimensional queries.
     pub fn get_one_query(
         position_range: &[RangeLimit],
         mode: RangeQueryRandomMode,
@@ -209,7 +218,7 @@ impl RangeQuery<()> {
         (query_l, query_r, ())
     }
 
-    /// Generate random queries.
+    /// Generate `num` random unweighted queries.
     pub fn random(
         num: usize,
         position_range: &[RangeLimit],
@@ -225,6 +234,8 @@ impl RangeQuery<()> {
     }
 
     /// Generate a single query while honoring length constraints.
+    ///
+    /// Constraints are interpreted per dimension after the endpoint range has been chosen.
     pub fn get_one_query_with_constraints(
         position_range: &[RangeLimit],
         mode: RangeQueryRandomMode,
@@ -263,8 +274,7 @@ impl RangeQuery<()> {
         (query_l, query_r, ())
     }
 
-    /// Generate random queries with length constraints.
-    /// Generate random queries while honoring length constraints.
+    /// Generate `num` random queries while honoring length constraints.
     pub fn random_with_constraints(
         num: usize,
         position_range: &[RangeLimit],
@@ -297,6 +307,8 @@ impl RangeQuery<()> {
 
 impl<W> RangeQuery<W> {
     /// Generate a single query together with a derived weight or payload.
+    ///
+    /// The payload is computed by calling `weight_fn(&left, &right)`.
     pub fn get_one_query_with_weight<F>(
         position_range: &[RangeLimit],
         mode: RangeQueryRandomMode,
@@ -312,8 +324,7 @@ impl<W> RangeQuery<W> {
         (l, r, w)
     }
 
-    /// Generate random weighted queries.
-    /// Generate random weighted queries.
+    /// Generate `num` random weighted queries.
     pub fn random_with_weight<F>(
         num: usize,
         position_range: &[RangeLimit],
@@ -340,6 +351,8 @@ impl<W> RangeQuery<W> {
 
 impl<W: std::fmt::Display> RangeQuery<W> {
     /// Render weighted queries as a newline-separated string.
+    ///
+    /// Each line is formatted as `left... right... weight`.
     pub fn to_string_with_weight(&self) -> String {
         let mut lines = Vec::with_capacity(self.result.len());
         for (l, r, w) in &self.result {

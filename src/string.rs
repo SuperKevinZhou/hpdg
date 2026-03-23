@@ -165,6 +165,9 @@ impl Default for ParagraphConfig {
 
 impl StringGen {
     /// Generate a random string from a charset.
+    ///
+    /// The charset is treated as a pool of Unicode scalar values; each generated position
+    /// independently samples one character from that pool.
     pub fn random(length_range: impl Into<LengthRange>, charset: &str) -> String {
         let mut rng = rand::rng();
         let len = pick_len(length_range.into(), &mut rng);
@@ -181,12 +184,17 @@ impl StringGen {
     }
 
     /// Generate a random word with an optional charset.
+    ///
+    /// When `charset` is `None`, [`ALPHABET_SMALL`] is used.
     pub fn random_word(length_range: impl Into<LengthRange>, charset: Option<&str>) -> String {
         let charset = charset.unwrap_or(ALPHABET_SMALL);
         Self::random(length_range, charset)
     }
 
     /// Generate a random sentence.
+    ///
+    /// Words are sampled independently according to [`SentenceConfig`], then joined using
+    /// random separators and finished with a random terminator when available.
     pub fn random_sentence(
         word_count_range: impl Into<LengthRange>,
         config: Option<&SentenceConfig>,
@@ -217,6 +225,9 @@ impl StringGen {
     }
 
     /// Generate a random paragraph.
+    ///
+    /// Internally this repeatedly builds sentence fragments and decides whether each fragment
+    /// should terminate or continue based on `termination_percentage`.
     pub fn random_paragraph(
         sentence_count_range: impl Into<LengthRange>,
         config: Option<&ParagraphConfig>,
@@ -421,6 +432,8 @@ impl StringGen {
     }
 
     /// Choose a random entry from a dictionary.
+    ///
+    /// Returns an empty string when the dictionary is empty.
     pub fn random_from_dict<T: AsRef<str>>(dict: &[T]) -> String {
         if dict.is_empty() {
             return String::new();
@@ -431,6 +444,8 @@ impl StringGen {
     }
 
     /// Build a sentence from dictionary words.
+    ///
+    /// Words are sampled with replacement from `dict`.
     pub fn random_sentence_from_dict<T: AsRef<str>>(
         word_count_range: impl Into<LengthRange>,
         dict: &[T],
@@ -454,6 +469,9 @@ impl StringGen {
     }
 
     /// Generate random strings with ASCII or Unicode modes.
+    ///
+    /// [`CharsetMode::Ascii`] uses a built-in alphanumeric alphabet; [`CharsetMode::Unicode`]
+    /// samples CJK Unified Ideographs for visually obvious non-ASCII output.
     pub fn random_with_mode(length_range: impl Into<LengthRange>, mode: CharsetMode) -> String {
         let mut rng = rand::rng();
         let len_range = length_range.into();

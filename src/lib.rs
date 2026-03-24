@@ -52,6 +52,37 @@
 //! - [`rng`]: deterministic RNG wrappers and reproducible stream splitting.
 //! - [`core`] and [`traits`]: Rust-flavored primitives such as newtypes and generator traits.
 //!
+//! ## Common Workflows
+//!
+//! - Generate graph-heavy datasets: [`graph::Graph`] + [`io::IO`]
+//! - Build text or token data: [`string::StringGen`] + [`vector::Vector`] + [`io::IO`]
+//! - Create reproducible batches: [`rng::SeededRng`] or [`rng::RngStream`]
+//! - Run local checker loops: [`compare`] + [`io::IO::output_gen`]
+//! - Build recurrence-driven values: [`sequence::Sequence`] + [`math`]
+//!
+//! ## Feature Guide
+//!
+//! Most modules are enabled by default. The most relevant optional integration features are:
+//!
+//! - `python-bindings`: enables PyO3-based Python bindings.
+//! - `c-bindings`: enables the experimental C ABI module.
+//!
+//! Internal feature flags such as `graph`, `io`, `math`, `query`, `string`, and `vector`
+//! mostly mirror module boundaries and can be used to slim down builds.
+//!
+//! ## Examples Index
+//!
+//! - `examples/full_generation.rs`: end-to-end sample combining graph, vector, string, and I/O.
+//! - `docs/rust-quickstart.md`: short Rust-oriented getting-started notes.
+//! - `docs/cyaron-api.md`: rough API mapping from CYaRon concepts to `hpdg`.
+//!
+//! ## Cross-links
+//!
+//! - Want deterministic testcase families? Start with [`rng`].
+//! - Want local judge-like verification? Jump to [`compare`].
+//! - Want graph generators specifically? [`graph::Graph`] is the main entry point.
+//! - Want ergonomic file naming and flushing? See [`io::IO`] and [`testcase::Testcase`].
+//!
 //! ## Recommended Path
 //!
 //! If you are new to the crate, the smoothest way to explore it is:

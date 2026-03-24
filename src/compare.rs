@@ -10,6 +10,15 @@
 //!
 //! assert!(compare_strings_normalized("1  2\n3", "1 2\n3").is_ok());
 //! ```
+//!
+//! ## Common Patterns
+//!
+//! - Use [`crate::compare::compare_strings`] when exact output matters.
+//! - Use [`crate::compare::compare_strings_normalized`] or
+//!   [`crate::compare::WhitespaceInsensitiveGrader`] when extra spaces
+//!   or line wrapping should be ignored.
+//! - Use [`crate::compare::compare_programs`] to compare a brute-force program and an optimized solution.
+//! - Use [`crate::compare::compare_strings_parallel`] when validating many generated cases at once.
 
 use std::error::Error;
 use std::fmt;
@@ -48,7 +57,7 @@ pub trait Grader {
     fn grade(&self, expected: &str, actual: &str) -> Result<(), CompareMismatch>;
 }
 
-/// Default grader using strict comparison.
+/// Default grader using strict line-by-line comparison.
 pub struct DefaultGrader;
 
 impl Grader for DefaultGrader {
@@ -58,6 +67,8 @@ impl Grader for DefaultGrader {
 }
 
 /// Grader that ignores whitespace differences.
+///
+/// This is useful for problems where formatting is not semantically important.
 pub struct WhitespaceInsensitiveGrader;
 
 impl Grader for WhitespaceInsensitiveGrader {
@@ -67,11 +78,15 @@ impl Grader for WhitespaceInsensitiveGrader {
 }
 
 /// Normalize whitespace in output.
+///
+/// All whitespace runs are collapsed into a single ASCII space.
 pub fn normalize_output(s: &str) -> String {
     s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 /// Compare two strings line by line.
+///
+/// Both strings are split with [`str::lines`], then compared line-by-line without trimming.
 pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismatch> {
     let exp_lines: Vec<&str> = expected.lines().collect();
     let act_lines: Vec<&str> = actual.lines().collect();
@@ -92,12 +107,14 @@ pub fn compare_strings(expected: &str, actual: &str) -> Result<(), CompareMismat
     Ok(())
 }
 
+/// Compare two strings after normalizing whitespace.
 pub fn compare_strings_normalized(expected: &str, actual: &str) -> Result<(), CompareMismatch> {
     let expected = normalize_output(expected);
     let actual = normalize_output(actual);
     compare_strings(&expected, &actual)
 }
 
+/// Compare two strings with an explicitly supplied [`Grader`].
 pub fn compare_with_grader<G: Grader>(
     expected: &str,
     actual: &str,
@@ -106,7 +123,7 @@ pub fn compare_with_grader<G: Grader>(
     grader.grade(expected, actual)
 }
 
-/// Compare two files line by line.
+/// Compare two files by reading them as UTF-8 text and calling [`compare_strings`].
 pub fn compare_files(expected_path: &str, actual_path: &str) -> Result<(), CompareMismatch> {
     let expected = fs::read_to_string(expected_path).unwrap_or_default();
     let actual = fs::read_to_string(actual_path).unwrap_or_default();
@@ -139,7 +156,10 @@ fn run_program(cmd: &[&str], input: &str) -> Result<String, String> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
-/// Run two programs and compare their outputs.
+/// Run two programs on the same input and compare their outputs.
+///
+/// Any process-launch failure is converted into a synthetic output string so the caller still
+/// receives a [`CompareMismatch`] instead of a process-level error type.
 pub fn compare_programs(
     expected_cmd: &[&str],
     actual_cmd: &[&str],
@@ -165,6 +185,8 @@ pub fn compare_programs_with_grader<G: Grader>(
 }
 
 /// Compare multiple string pairs in parallel.
+///
+/// Work is split into `threads.max(1)` chunks, and the first mismatch is returned.
 pub fn compare_strings_parallel(
     pairs: &[(String, String)],
     threads: usize,

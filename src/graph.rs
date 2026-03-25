@@ -13,6 +13,16 @@
 //! assert_eq!(graph.node_count(), 5);
 //! assert_eq!(graph.edge_count(), 4);
 //! ```
+//!
+//! ## Display-Oriented Output
+//!
+//! Many graph utilities in this module can be inspected directly as text:
+//!
+//! - [`crate::graph::Edge`] and [`crate::graph::Graph`] implement [`std::fmt::Display`].
+//! - [`crate::graph::Graph::to_string`] and [`crate::graph::Graph::to_string_with`] produce edge-list text.
+//! - [`crate::graph::Graph::to_adj_list_string`] produces adjacency-list text.
+//! - [`crate::graph::GraphMatrix`] implements [`std::fmt::Display`] for matrix output.
+//! - [`crate::graph::Merger::to_string`] renders merged graph views directly.
 
 use rand::{
     Rng,
@@ -27,6 +37,17 @@ use std::{
 };
 
 /// Graph edge with an optional integral weight.
+///
+/// # Example
+///
+/// ```rust
+/// use hpdg::graph::Edge;
+///
+/// let plain = Edge::new(1, 2, None);
+/// let weighted = Edge::new(2, 3, Some(7));
+/// assert_eq!(plain.to_string(), "1 2");
+/// assert_eq!(weighted.to_string(), "2 3 7");
+/// ```
 #[derive(Clone, Debug)]
 pub struct Edge {
     u: usize,
@@ -66,16 +87,37 @@ impl Edge {
     }
 
     /// Format the edge as `u v`.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Edge;
+    ///
+    /// let edge = Edge::new(1, 2, None);
+    /// assert_eq!(edge.format_unweighted(), "1 2");
+    /// ```
     pub fn format_unweighted(&self) -> String {
         format!("{} {}", self.u, self.v)
     }
 
     /// Format the edge as `u v w`.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Edge;
+    ///
+    /// let edge = Edge::new(1, 2, Some(9));
+    /// assert_eq!(edge.format_weighted(), "1 2 9");
+    /// ```
     pub fn format_weighted(&self) -> String {
         format!("{} {} {}", self.u, self.v, self.w)
     }
 
     /// Format the edge using weighted or unweighted output automatically.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Edge;
+    ///
+    /// assert_eq!(Edge::new(1, 2, None).format_default(), "1 2");
+    /// assert_eq!(Edge::new(1, 2, Some(5)).format_default(), "1 2 5");
+    /// ```
     pub fn format_default(&self) -> String {
         if self.weighted {
             self.format_weighted()
@@ -600,6 +642,18 @@ impl SwitchGraph {
 }
 
 /// Adjacency-list graph container used by most graph APIs in the crate.
+///
+/// `Display` renders one visible edge per line using the default edge formatter.
+///
+/// ```rust
+/// use hpdg::graph::Graph;
+///
+/// let graph = Graph::chain(3, None, false, None);
+/// let rendered = format!("{}", graph);
+/// let mut lines: Vec<_> = rendered.lines().collect();
+/// lines.sort();
+/// assert_eq!(lines, vec!["1 2", "2 3"]);
+/// ```
 pub struct Graph {
     directed: bool,
     edges: HashMap<usize, Vec<Edge>>,
@@ -735,6 +789,15 @@ impl Graph {
     }
 
     /// Export the graph as adjacency-list text.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::chain(3, None, false, None);
+    /// assert_eq!(graph.to_adj_list_string(","), "1: 2\n2: 1,3\n3: 2");
+    /// ```
     pub fn to_adj_list_string(&self, sep: &str) -> String {
         let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
         nodes.sort_unstable();
@@ -758,6 +821,21 @@ impl Graph {
     }
 
     /// Export the graph as an adjacency matrix together with sorted node labels.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::chain(3, None, false, None);
+    /// let (nodes, matrix) = graph.to_matrix(0);
+    /// assert_eq!(nodes, vec![1, 2, 3]);
+    /// assert_eq!(matrix, vec![
+    ///     vec![0, 1, 0],
+    ///     vec![1, 0, 1],
+    ///     vec![0, 1, 0],
+    /// ]);
+    /// ```
     pub fn to_matrix(&self, default: i64) -> (Vec<usize>, Vec<Vec<i64>>) {
         let mut nodes: Vec<usize> = self.edges.keys().cloned().collect();
         nodes.sort_unstable();
@@ -882,6 +960,19 @@ impl Graph {
     }
 
     /// Build a chain graph on `point_count` nodes.
+    ///
+    /// `weight_limit` provides an inclusive weight range when no custom generator is supplied.
+    /// `directed` controls whether each edge is stored once or mirrored.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::chain(4, None, false, None);
+    /// let rendered = graph.to_string(false, None, None);
+    /// let mut lines: Vec<_> = rendered.lines().collect();
+    /// lines.sort();
+    /// assert_eq!(lines, vec!["1 2", "2 3", "3 4"]);
+    /// ```
     pub fn chain(
         point_count: usize,
         weight_limit: Option<(i64, i64)>,
@@ -910,6 +1001,18 @@ impl Graph {
     }
 
     /// Build a flower graph with node `1` as the center.
+    ///
+    /// For undirected graphs, node `1` is connected to every other node.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::flower(4, None, false, None);
+    /// let rendered = graph.to_string(false, None, None);
+    /// let mut lines: Vec<_> = rendered.lines().collect();
+    /// lines.sort();
+    /// assert_eq!(lines, vec!["1 2", "1 3", "1 4"]);
+    /// ```
     pub fn flower(
         point_count: usize,
         weight_limit: Option<(i64, i64)>,
@@ -938,6 +1041,20 @@ impl Graph {
     }
 
     /// Render the graph as newline-separated edge text.
+    ///
+    /// - `shuffle`: if `true`, randomize labels and edge order before rendering.
+    /// - `line_reserve`: capacity hint used only for internal preallocation.
+    /// - `edge_display_function`: custom line formatter; if `None`, the default edge format is used.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::chain(3, None, false, None);
+    /// let rendered = graph.to_string(false, None, None);
+    /// let mut lines: Vec<_> = rendered.lines().collect();
+    /// lines.sort();
+    /// assert_eq!(lines, vec!["1 2", "2 3"]);
+    /// ```
     pub fn to_string(
         &self,
         shuffle: bool,
@@ -987,6 +1104,16 @@ impl Graph {
     }
 
     /// Render the graph with a custom edge formatter closure.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::chain(3, None, false, None);
+    /// let rendered = graph.to_string_with(false, None, |e| format!("edge({})", e.format_default()));
+    /// let mut lines: Vec<_> = rendered.lines().collect();
+    /// lines.sort();
+    /// assert_eq!(lines, vec!["edge(1 2)", "edge(2 3)"]);
+    /// ```
     pub fn to_string_with<F>(
         &self,
         shuffle: bool,
@@ -1178,6 +1305,14 @@ impl Graph {
     ///
     /// The `chain` and `flower` parameters bias how many edges are reserved for a path-like
     /// prefix and a star-like prefix before the remaining nodes are attached randomly.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::tree(6, 0.3, 0.2, None, true, None, None);
+    /// assert_eq!(graph.node_count(), 6);
+    /// assert_eq!(graph.edge_count(), 5);
+    /// ```
     pub fn tree(
         point_count: usize,
         chain: f64,
@@ -1286,6 +1421,14 @@ impl Graph {
     ///
     /// The `left` and `right` parameters bias whether a new node is attached as a left child
     /// or right child when both choices are available.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::binary_tree(7, 0.5, 0.5, None, false, None);
+    /// assert_eq!(graph.node_count(), 7);
+    /// assert_eq!(graph.edge_count(), 6);
+    /// ```
     pub fn binary_tree(
         point_count: usize,
         left: f64,
@@ -1482,6 +1625,14 @@ impl Graph {
     ///
     /// Set `self_loop` and `repeated_edges` to control whether loops and parallel edges are
     /// allowed. Weighted graphs can be produced either by `weight_limit` or `weight_gen`.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::graph(5, 4, false, false, false, None, None);
+    /// assert_eq!(graph.node_count(), 5);
+    /// assert_eq!(graph.edge_count(), 4);
+    /// ```
     pub fn graph(
         point_count: usize,
         edge_count: usize,
@@ -1854,6 +2005,14 @@ impl Graph {
     ///
     /// This starts from a random tree and then adds random extra edges until `edge_count`
     /// visible edges are present.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::connected(6, 7, false, None, None);
+    /// assert_eq!(graph.node_count(), 6);
+    /// assert_eq!(graph.edge_count(), 7);
+    /// ```
     pub fn connected(
         point_count: usize,
         edge_count: usize,
@@ -1989,6 +2148,14 @@ impl Graph {
     /// Generate a forest.
     ///
     /// The result contains exactly `tree_count` connected components.
+    ///
+    /// ```rust
+    /// use hpdg::graph::Graph;
+    ///
+    /// let graph = Graph::forest(6, 2, None, false, None);
+    /// assert_eq!(graph.node_count(), 6);
+    /// assert_eq!(graph.edge_count(), 4);
+    /// ```
     pub fn forest(
         point_count: usize,
         tree_count: usize,
@@ -2225,6 +2392,17 @@ impl Graph {
 }
 
 /// Dense adjacency-matrix helper.
+///
+/// `Display` renders rows separated by newlines and cells separated by spaces.
+///
+/// ```rust
+/// use hpdg::graph::GraphMatrix;
+///
+/// let mut matrix = GraphMatrix::new(2, 0);
+/// matrix.set(0, 1, 7);
+/// matrix.set(1, 0, 9);
+/// assert_eq!(format!("{}", matrix), "0 7\n9 0");
+/// ```
 pub struct GraphMatrix<T> {
     matrix: Vec<Vec<T>>,
     default: T,
@@ -2283,6 +2461,9 @@ impl<T> std::ops::IndexMut<(usize, usize)> for GraphMatrix<T> {
 }
 
 /// Merge multiple graphs into one graph view.
+///
+/// This is useful when several generators independently build components that should later
+/// be combined into one printable graph.
 pub struct Merger {
     directed: bool,
     graphs: Vec<Graph>,
@@ -2305,6 +2486,15 @@ impl Merger {
     }
 
     /// Render the merged graph as edge text.
+    ///
+    /// ```rust
+    /// use hpdg::graph::{Graph, Merger};
+    ///
+    /// let a = Graph::chain(2, None, false, None);
+    /// let b = Graph::chain(3, None, false, None).offset_labels(1);
+    /// let merger = Merger::new([a, b], false);
+    /// assert!(merger.to_string().contains("1 2"));
+    /// ```
     pub fn to_string(&self) -> String {
         self.to_graph().to_string(false, None, None)
     }

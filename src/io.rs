@@ -14,6 +14,31 @@
 //! io.output_writeln("ok");
 //! assert!(io.last_capture().is_none());
 //! ```
+//!
+//! ## Naming Model
+//!
+//! `IO` keeps separate input/output filenames and can derive them from a shared prefix plus
+//! optional testcase ids.
+//!
+//! ```text
+//! prefix = "cases/data"
+//! data_id = 3
+//! data_id_separator = "_"
+//! data_id_width = Some(2)
+//!
+//! => input file  = "cases/data_03.in"
+//! => output file = "cases/data_03.out"
+//! ```
+//!
+//! ## Output Shape Examples
+//!
+//! ```text
+//! io.input_writeln_slice(&[1, 2, 3], " ")
+//! => "1 2 3\n"
+//!
+//! io.input_writeln_matrix(&[vec![1, 2], vec![3, 4]], " ")
+//! => "1 2\n3 4\n"
+//! ```
 
 /// Formatting strategy used by [`IO`] write helpers.
 pub trait Formatter {
@@ -37,6 +62,13 @@ pub trait Formatter {
 
 #[derive(Debug, Clone)]
 /// A formatter that joins items with a separator.
+///
+/// ```rust
+/// use hpdg::io::{Formatter, SepFormatter};
+///
+/// let fmt = SepFormatter::new(", ".to_string());
+/// assert_eq!(fmt.format_iter([1, 2, 3]), "1, 2, 3");
+/// ```
 pub struct SepFormatter {
     sep: String,
 }
@@ -112,6 +144,18 @@ pub type IOResult<T> = Result<T, IOError>;
 
 #[derive(Debug, Clone)]
 /// Testcase input/output buffer and file naming helper.
+///
+/// ```no_run
+/// use hpdg::io::IO;
+///
+/// let mut io = IO::new("cases/data".to_string());
+/// io.data_id_separator("_".to_string())
+///     .data_id_width(Some(2))
+///     .data_id(3)
+///     .input_writeln_slice(&[1, 2, 3], " ")
+///     .output_writeln("6");
+/// let _ = io.flush_to_disk();
+/// ```
 pub struct IO {
     input_file: String,
     output_file: String,
@@ -446,6 +490,8 @@ impl IO {
     }
 
     /// Write a slice to the input buffer as one line separated by `sep`.
+    ///
+    /// Conceptually this produces output like `1 2 3\n` when `sep == " "`.
     pub fn input_writeln_slice<T: std::fmt::Display>(
         &mut self,
         slice: &[T],
@@ -455,6 +501,8 @@ impl IO {
     }
 
     /// Write a slice to the output buffer as one line separated by `sep`.
+    ///
+    /// Conceptually this produces output like `1 2 3\n` when `sep == " "`.
     pub fn output_writeln_slice<T: std::fmt::Display>(
         &mut self,
         slice: &[T],
@@ -464,6 +512,13 @@ impl IO {
     }
 
     /// Write a matrix to the input buffer, one row per line.
+    ///
+    /// For example, `[[1, 2], [3, 4]]` with `sep == " "` becomes:
+    ///
+    /// ```text
+    /// 1 2
+    /// 3 4
+    /// ```
     pub fn input_writeln_matrix<T: std::fmt::Display>(
         &mut self,
         matrix: &[Vec<T>],
@@ -476,6 +531,13 @@ impl IO {
     }
 
     /// Write a matrix to the output buffer, one row per line.
+    ///
+    /// For example, `[[1, 2], [3, 4]]` with `sep == " "` becomes:
+    ///
+    /// ```text
+    /// 1 2
+    /// 3 4
+    /// ```
     pub fn output_writeln_matrix<T: std::fmt::Display>(
         &mut self,
         matrix: &[Vec<T>],
@@ -550,6 +612,15 @@ impl IO {
     }
 
     /// Flush both text buffers and byte buffers to their configured files.
+    ///
+    /// ```no_run
+    /// use hpdg::io::IO;
+    ///
+    /// let mut io = IO::new("sample".to_string());
+    /// io.input_writeln("1 2 3");
+    /// io.output_writeln("6");
+    /// let _ = io.flush_to_disk();
+    /// ```
     pub fn flush_to_disk(&self) -> std::io::Result<()> {
         self.ensure_no_conflict()?;
         self.log("flush_to_disk: start");
@@ -645,6 +716,8 @@ impl IO {
     }
 
     /// Open a streaming writer for the configured input file.
+    ///
+    /// This is useful when the full testcase would be expensive to buffer in memory first.
     pub fn open_input_stream(&self) -> std::io::Result<IOStream> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.input_file)?;
@@ -655,6 +728,8 @@ impl IO {
     }
 
     /// Open a streaming writer for the configured output file.
+    ///
+    /// This is useful when the full testcase would be expensive to buffer in memory first.
     pub fn open_output_stream(&self) -> std::io::Result<IOStream> {
         self.ensure_no_conflict()?;
         self.prepare_path(&self.output_file)?;
@@ -713,6 +788,9 @@ impl IO {
 
     #[cfg(feature = "proc")]
     /// Run an external program using the generated input/output files directly.
+    ///
+    /// This mirrors a common OI workflow where the standard solution reads from the input file
+    /// and writes to the output file.
     pub fn output_gen_with_files(&mut self, program: &str) -> std::io::Result<()> {
         self.log("output_gen_with_files: start");
         self.flush_input_to_disk()?;
@@ -790,6 +868,9 @@ impl IO {
 
     #[cfg(all(feature = "parallel", feature = "proc"))]
     /// Run the same external program for multiple [`IO`] instances in parallel.
+    ///
+    /// This is convenient when a batch of independently generated testcases should all be
+    /// post-processed by the same standard solution.
     pub fn output_gen_parallel(ios: &mut [IO], program: &str) -> std::io::Result<()> {
         let program = program.to_string();
         let mut first_err: Option<std::io::Error> = None;
@@ -865,6 +946,8 @@ pub trait StreamingWriter {
 }
 
 /// A streaming writer to avoid buffering the whole output in memory.
+///
+/// Use this when you want the ergonomics of `write`/`writeln` but prefer incremental output.
 pub struct IOStream {
     writer: std::io::BufWriter<std::fs::File>,
 }
@@ -929,6 +1012,16 @@ impl StreamingWriter for IOStream {
 }
 
 /// Batch builder for multiple testcases.
+///
+/// ```rust
+/// use hpdg::io::IOBatchBuilder;
+///
+/// let batch = IOBatchBuilder::new("case".to_string())
+///     .range(1, 3)
+///     .data_id_separator("_".to_string())
+///     .build();
+/// assert_eq!(batch.len(), 3);
+/// ```
 pub struct IOBatchBuilder {
     prefix: String,
     data_ids: Vec<usize>,

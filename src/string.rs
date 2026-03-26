@@ -520,17 +520,14 @@ mod tests {
         let s = StringGen::random_regex(pattern, 5);
         let chars = s.chars().collect::<Vec<_>>();
         assert!(!chars.is_empty());
-        let mut idx = 0usize;
-        while idx < chars.len() && chars[idx].is_ascii_digit() {
-            idx += 1;
-        }
-        assert!(idx < chars.len());
-        let word = chars[idx];
-        assert!(word.is_ascii_alphanumeric() || word == '_');
-        idx += 1;
-        assert!(idx < chars.len() && chars[idx] == '_');
-        idx += 1;
-        assert!(chars.len().saturating_sub(idx) <= 9);
+        let matches_pattern = (1..chars.len()).any(|digit_end| {
+            chars[..digit_end].iter().all(|c| c.is_ascii_digit())
+                && digit_end + 1 < chars.len()
+                && (chars[digit_end].is_ascii_alphanumeric() || chars[digit_end] == '_')
+                && chars[digit_end + 1] == '_'
+                && chars.len().saturating_sub(digit_end + 2) <= 9
+        });
+        assert!(matches_pattern, "generated string did not match simplified regex: {s}");
     }
 
     #[test]

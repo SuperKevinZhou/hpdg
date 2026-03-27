@@ -527,7 +527,10 @@ mod tests {
                 && chars[digit_end + 1] == '_'
                 && chars.len().saturating_sub(digit_end + 2) <= 9
         });
-        assert!(matches_pattern, "generated string did not match simplified regex: {s}");
+        assert!(
+            matches_pattern,
+            "generated string did not match simplified regex: {s}"
+        );
     }
 
     #[test]

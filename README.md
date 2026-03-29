@@ -8,6 +8,7 @@ The project is inspired by Luogu's CYaRon, but it leans into Rust's strengths in
 
 `hpdg` is under active development, but it is no longer just a skeleton:
 
+- The crate is now published on crates.io as `hpdg`.
 - The crate compiles across library, examples, benches, and tests.
 - Core generator modules are implemented and usable today.
 - The public API is still evolving, so breaking changes are possible before `1.0`.
@@ -78,14 +79,24 @@ See also:
 
 ## Installation
 
-Until the first crates.io release lands, depend on the Git repository directly:
+Install from crates.io:
+
+```toml
+[dependencies]
+hpdg = "0.1.0"
+```
+
+You can also browse the published package and API docs here:
+
+- [crates.io/crates/hpdg](https://crates.io/crates/hpdg)
+- [docs.rs/hpdg](https://docs.rs/hpdg)
+
+If you need unreleased changes, you can still depend on the Git repository directly:
 
 ```toml
 [dependencies]
 hpdg = { git = "https://github.com/SuperKevinZhou/hpdg" }
 ```
-
-After the crate is published, a normal crates.io dependency will be the preferred installation path.
 
 ## Feature Flags
 
